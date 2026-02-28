@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Check-in Digital | Rosa & Souza</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+
+<style>
+body{
+    font-family:'Poppins', sans-serif;
+    background:linear-gradient(135deg,#0f2027,#203a43,#2c5364);
+    margin:0;
+    padding:20px;
+}
+
+.container{
+    max-width:520px;
+    margin:auto;
+    background:white;
+    padding:25px;
+    border-radius:16px;
+    box-shadow:0 15px 35px rgba(0,0,0,0.3);
+}
+
+header{text-align:center;margin-bottom:20px;}
+header h1{font-size:16px;color:#2c5364;margin:0;}
+header p{font-size:12px;color:#777;}
+
+label{
+    font-size:12px;
+    font-weight:600;
+    margin-top:10px;
+    display:block;
+}
+
+input, select{
+    width:100%;
+    padding:12px;
+    margin-top:5px;
+    border-radius:10px;
+    border:1px solid #ddd;
+    font-size:14px;
+    background:#f9f9f9;
+}
+
+.card{
+    background:#f4f6f9;
+    padding:15px;
+    border-radius:12px;
+    margin-top:15px;
+}
+
+button{
+    width:100%;
+    padding:14px;
+    border:none;
+    border-radius:12px;
+    margin-top:15px;
+    font-weight:600;
+    cursor:pointer;
+}
+
+.add-btn{ background:#1abc9c; color:white; }
+.submit-btn{ background:#2c5364; color:white; }
+
+.regras{ display:none; margin-top:20px; }
+.regras ul{ font-size:13px; }
+
+.footer{
+    text-align:center;
+    font-size:11px;
+    margin-top:15px;
+    color:#777;
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<header>
+<h1>ROSA & SOUZA ADMINISTRADORA DE BENS</h1>
+<p>Check-in Digital</p>
+</header>
+
+<form id="formCadastro">
+
+<label>Estúdio</label>
+<select required>
+<option value="">Selecione</option>
+<option>Domy Vila Mariana 108</option>
+<option>Domy Vila Mariana 211</option>
+<option>SETIN REPUBLICA 403</option>
+<option>SETIN REPUBLICA 1205</option>
+<option>SETIN REPUBLICA 1110</option>
+<option>MYONE BROOKLIN 1301</option>
+<option>MAISON PERDIZES 506</option>
+<option>NAU KLABIN 510</option>
+<option>HUB ITAGUA 203</option>
+<option>ARYEH TENORIO 103</option>
+</select>
+
+<label>Data Check-in</label>
+<input type="date" required>
+
+<label>Data Check-out</label>
+<input type="date" required>
+
+<div id="pessoasContainer"></div>
+
+<button type="button" class="add-btn" onclick="adicionarPessoa()">Adicionar Hóspede</button>
+<button type="submit" class="submit-btn">Fazer Check-in</button>
+
+</form>
+
+<div class="regras" id="telaRegras">
+<h3>Regras da Casa</h3>
+<ul>
+<li>🚭 NÃO É PERMITIDO FUMAR NO ESTÚDIO</li>
+<li>🔇 RESPEITAR A LEI DO SILÊNCIO</li>
+<li>🚫 NÃO É PERMITIDO RECEBER VISITAS NÃO CADASTRADAS</li>
+<li>⏰ RESPEITAR O HORÁRIO DE CHECK-OUT</li>
+<li>💰 DANOS SERÃO COBRADOS À PARTE</li>
+<li>🐶 NÃO É PERMITIDO PETS</li>
+</ul>
+
+<label style="margin-top:15px;">
+<input type="checkbox" id="lgpdCheck">
+CONCORDO QUE MEUS DADOS SEJAM USADOS PARA EFEITO DE CADASTRO, INCLUSIVE O USO DO DOCUMENTO ENVIADO, CONFORME LEI DE PROTEÇÃO DE DADOS (LGPD).
+</label>
+
+<button onclick="finalizar()">Concluir Check-in</button>
+</div>
+
+<div class="footer">
+© 2026 ROSA & SOUZA ADMINISTRADORA DE BENS
+</div>
+
+</div>
+
+<script>
+let contador = 0;
+const maxPessoas = 6;
+
+function validarCPF(cpf){
+    cpf = cpf.replace(/[^\d]+/g,'');
+    if(cpf.length !== 11 || /^(\d)\1+$/.test(cpf)) return false;
+
+    let soma = 0;
+    for(let i=0;i<9;i++)
+        soma += parseInt(cpf.charAt(i)) * (10 - i);
+
+    let resto = 11 - (soma % 11);
+    if(resto >= 10) resto = 0;
+    if(resto != parseInt(cpf.charAt(9))) return false;
+
+    soma = 0;
+    for(let i=0;i<10;i++)
+        soma += parseInt(cpf.charAt(i)) * (11 - i);
+
+    resto = 11 - (soma % 11);
+    if(resto >= 10) resto = 0;
+    if(resto != parseInt(cpf.charAt(10))) return false;
+
+    return true;
+}
+
+function buscarCEP(cep,index){
+    cep = cep.replace(/\D/g,'');
+    if(cep.length !== 8) return;
+
+    fetch("https://viacep.com.br/ws/"+cep+"/json/")
+    .then(res => res.json())
+    .then(data => {
+        if(!data.erro){
+            document.getElementById("endereco_"+index).value =
+                data.logradouro+", "+data.bairro+" - "+data.localidade+"/"+data.uf;
+        }
+    });
+}
+
+function adicionarPessoa(){
+    if(contador >= maxPessoas){
+        alert("Máximo 6 hóspedes.");
+        return;
+    }
+
+    contador++;
+
+    const container = document.getElementById("pessoasContainer");
+
+    const repetir = contador > 1 ?
+    `<label>
+        <input type="checkbox" onchange="usarMesmoEndereco(this,${contador})">
+        Mesmo endereço do primeiro hóspede
+    </label>` : "";
+
+    const card = document.createElement("div");
+    card.className = "card";
+
+    card.innerHTML = `
+        <h4>Hóspede ${contador}</h4>
+
+        <label>Nome Completo</label>
+        <input type="text" required>
+
+        <label>CEP</label>
+        <input type="text" id="cep_${contador}" onblur="buscarCEP(this.value,${contador})" required>
+
+        <label>Endereço Completo</label>
+        <input type="text" id="endereco_${contador}" required>
+
+        ${repetir}
+
+        <label>Celular</label>
+        <input type="tel" required>
+
+        <label>CPF</label>
+        <input type="text" class="cpf" required>
+
+        <label>Documento</label>
+        <input type="file" accept="image/*" required>
+    `;
+
+    container.appendChild(card);
+}
+
+function usarMesmoEndereco(checkbox,index){
+    const cepField = document.getElementById("cep_"+index);
+    const endField = document.getElementById("endereco_"+index);
+
+    if(checkbox.checked){
+        endField.value = document.getElementById("endereco_1").value;
+        cepField.required = false;
+        cepField.disabled = true;
+    }else{
+        cepField.required = true;
+        cepField.disabled = false;
+        endField.value = "";
+    }
+}
+
+async function finalizar(){
+
+    const lgpd = document.getElementById("lgpdCheck");
+    if(!lgpd.checked){
+        alert("Você deve concordar com o termo LGPD.");
+        return;
+    }
+
+    const estudio = document.querySelector("select").value;
+    const datas = document.querySelectorAll("input[type='date']");
+    const checkin = datas[0].value;
+    const checkout = datas[1].value;
+
+    const hospedes = [];
+    const cards = document.querySelectorAll("#pessoasContainer .card");
+
+    cards.forEach(card=>{
+        const inputs = card.querySelectorAll("input");
+
+        hospedes.push({
+            nome: inputs[0].value,
+            cep: inputs[1].value,
+            endereco: inputs[2].value,
+            celular: inputs[4].value,
+            cpf: inputs[5].value
+        });
+    });
+
+    const dados = {
+        estudio,
+        checkin,
+        checkout,
+        hospedes
+    };
+
+    try{
+        await fetch("/checkin",{
+            method:"POST",
+            headers:{ "Content-Type":"application/json" },
+            body: JSON.stringify(dados)
+        });
+
+        alert("Check-in salvo com sucesso!");
+        location.reload();
+
+    }catch(erro){
+        alert("Erro ao salvar check-in.");
+    }
+}
+
+document.getElementById("formCadastro").addEventListener("submit",function(e){
+    e.preventDefault();
+
+    const cpfs = document.querySelectorAll(".cpf");
+
+    for(let cpfInput of cpfs){
+        if(!validarCPF(cpfInput.value)){
+            alert("CPF inválido.");
+            cpfInput.focus();
+            return;
+        }
+    }
+
+    document.getElementById("formCadastro").style.display="none";
+    document.getElementById("telaRegras").style.display="block";
+});
+
+adicionarPessoa();
+</script>
+
+</body>
+</html>
