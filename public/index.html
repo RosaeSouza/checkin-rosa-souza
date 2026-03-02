@@ -58,10 +58,10 @@ button{
     background:#ffe5e5;
     border:2px solid red;
     color:#b00000;
-    padding:15px;
+    padding:12px;
     border-radius:10px;
-    font-size:14px;
-    margin-top:15px;
+    font-size:13px;
+    margin-top:10px;
     text-align:center;
     font-weight:600;
 }
@@ -116,39 +116,146 @@ button{
 let contador = 0;
 const maxPessoas = 6;
 
+function validarCPF(cpf){
+    cpf = cpf.replace(/[^\d]+/g,'');
+    if(cpf.length !== 11 || /^(\d)\1+$/.test(cpf)) return false;
+
+    let soma=0;
+    for(let i=0;i<9;i++)
+        soma+=parseInt(cpf.charAt(i))*(10-i);
+    let resto=11-(soma%11);
+    if(resto>=10) resto=0;
+    if(resto!=parseInt(cpf.charAt(9))) return false;
+
+    soma=0;
+    for(let i=0;i<10;i++)
+        soma+=parseInt(cpf.charAt(i))*(11-i);
+    resto=11-(soma%11);
+    if(resto>=10) resto=0;
+    if(resto!=parseInt(cpf.charAt(10))) return false;
+
+    return true;
+}
+
+function buscarCEP(cep,index){
+    cep=cep.replace(/\D/g,'');
+    if(cep.length!==8) return;
+
+    fetch(`https://viacep.com.br/ws/${cep}/json/`)
+    .then(res=>res.json())
+    .then(data=>{
+        if(!data.erro){
+            document.getElementById("endereco_"+index).value=
+            data.logradouro+", "+data.bairro+" - "+data.localidade+"/"+data.uf;
+        }
+    });
+}
+
 function adicionarPessoa(){
 
-    if(contador >= maxPessoas){
+    if(contador>=maxPessoas){
         alert("Máximo 6 hóspedes.");
         return;
     }
 
     contador++;
 
-    const container = document.getElementById("pessoasContainer");
+    const container=document.getElementById("pessoasContainer");
 
-    const card = document.createElement("div");
-    card.className = "card";
+    const repetir=contador>1?`
+    <label>
+    <input type="checkbox" onchange="usarMesmoEndereco(this,${contador})">
+    Mesmo endereço do primeiro hóspede
+    </label>`:"";
 
-    card.innerHTML = `
+    const card=document.createElement("div");
+    card.className="card";
+    card.innerHTML=`
         <h4>Hóspede ${contador}</h4>
 
         <label>Nome Completo</label>
-        <input type="text" class="nome" required>
+        <input type="text" required>
+
+        <label>CEP</label>
+        <input type="text" id="cep_${contador}" onblur="buscarCEP(this.value,${contador})" required>
+
+        <label>Endereço Completo</label>
+        <input type="text" id="endereco_${contador}" required>
+
+        ${repetir}
 
         <label>Celular</label>
-        <input type="tel" class="celular" required>
+        <input type="tel" required>
 
-        <div class="aviso">
-        ⚠️ ATENÇÃO: NÃO ACEITAMOS DOCUMENTO EM PDF.<br>
-        Envie uma FOTO do documento (RG, CNH ou Passaporte) no formato JPG ou PNG.
+        <label>
+        <input type="checkbox" onchange="estrangeiroToggle(this,${contador})">
+        Sou estrangeiro
+        </label>
+
+        <div id="cpfArea_${contador}">
+            <label>CPF</label>
+            <input type="text" class="cpf" required>
         </div>
 
-        <label>Documento (Envie FOTO em JPG ou PNG)</label>
-        <input type="file" class="documento" accept=".jpg,.jpeg,.png" required>
+        <div id="passaporteArea_${contador}" style="display:none;">
+            <label>Passaporte</label>
+            <input type="text">
+
+            <label>País</label>
+            <select>
+                <option value="">Selecione</option>
+                <option>Brasil</option>
+                <option>Argentina</option>
+                <option>Estados Unidos</option>
+                <option>Portugal</option>
+                <option>França</option>
+                <option>Alemanha</option>
+                <option>Itália</option>
+                <option>Reino Unido</option>
+                <option>Japão</option>
+                <option>Outro</option>
+            </select>
+        </div>
+
+        <div class="aviso">
+        ⚠️ NÃO ACEITAMOS DOCUMENTO EM PDF.<br>
+        Envie uma FOTO do documento (JPG ou PNG).
+        </div>
+
+        <label>Documento</label>
+        <input type="file" accept=".jpg,.jpeg,.png" required>
     `;
 
     container.appendChild(card);
+}
+
+function usarMesmoEndereco(checkbox,index){
+    const cepField=document.getElementById("cep_"+index);
+    const endField=document.getElementById("endereco_"+index);
+
+    if(checkbox.checked){
+        endField.value=document.getElementById("endereco_1").value;
+        cepField.required=false;
+        cepField.disabled=true;
+    }else{
+        cepField.required=true;
+        cepField.disabled=false;
+    }
+}
+
+function estrangeiroToggle(checkbox,index){
+    const cpfArea=document.getElementById("cpfArea_"+index);
+    const passaporteArea=document.getElementById("passaporteArea_"+index);
+
+    if(checkbox.checked){
+        cpfArea.style.display="none";
+        cpfArea.querySelector("input").required=false;
+        passaporteArea.style.display="block";
+    }else{
+        cpfArea.style.display="block";
+        cpfArea.querySelector("input").required=true;
+        passaporteArea.style.display="none";
+    }
 }
 
 adicionarPessoa();
