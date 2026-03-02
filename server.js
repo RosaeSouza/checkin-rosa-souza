@@ -34,9 +34,19 @@ cloudinary.config({
 
 const storage = new CloudinaryStorage({
   cloudinary: cloudinary,
-  params: {
-    folder: "documentos_checkin",
-    allowed_formats: ["jpg", "jpeg", "png", "pdf"]
+  params: async (req, file) => {
+
+    let resourceType = "image";
+
+    if (file.mimetype === "application/pdf") {
+      resourceType = "raw";
+    }
+
+    return {
+      folder: "documentos_checkin",
+      resource_type: resourceType,
+      allowed_formats: ["jpg", "jpeg", "png", "pdf"]
+    };
   }
 });
 
@@ -78,10 +88,9 @@ app.post("/checkin", upload.any(), async (req, res) => {
 
     const hospedes = JSON.parse(req.body.hospedes);
 
-    // Associar cada arquivo enviado ao respectivo hóspede
-    if(req.files && req.files.length > 0){
+    if (req.files && req.files.length > 0) {
       req.files.forEach((file, index) => {
-        if(hospedes[index]){
+        if (hospedes[index]) {
           hospedes[index].documentoUrl = file.path;
         }
       });
