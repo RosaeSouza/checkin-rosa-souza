@@ -53,6 +53,18 @@ button{
 }
 .add-btn{ background:#1abc9c; color:white; }
 .submit-btn{ background:#2c5364; color:white; }
+
+.aviso{
+    background:#ffe5e5;
+    border:2px solid red;
+    color:#b00000;
+    padding:15px;
+    border-radius:10px;
+    font-size:14px;
+    margin-top:15px;
+    text-align:center;
+    font-weight:600;
+}
 </style>
 </head>
 
@@ -115,13 +127,6 @@ function adicionarPessoa(){
 
     const container = document.getElementById("pessoasContainer");
 
-    const repetirEndereco = contador > 1 ? `
-        <label>
-            <input type="checkbox" onchange="usarMesmoEndereco(this, ${contador})">
-            Mesmo endereço do primeiro hóspede
-        </label>
-    ` : "";
-
     const card = document.createElement("div");
     card.className = "card";
 
@@ -131,49 +136,12 @@ function adicionarPessoa(){
         <label>Nome Completo</label>
         <input type="text" class="nome" required>
 
-        <label>CEP</label>
-        <input type="text" class="cep" required>
-
-        <label>Endereço Completo</label>
-        <input type="text" class="endereco" required>
-
-        ${repetirEndereco}
-
         <label>Celular</label>
         <input type="tel" class="celular" required>
 
-        <label>
-            <input type="checkbox" onchange="estrangeiroToggle(this, ${contador})">
-            Sou estrangeiro
-        </label>
-
-        <div class="cpfArea">
-            <label>CPF</label>
-            <input type="text" class="cpf">
-        </div>
-
-        <div class="passaporteArea" style="display:none;">
-            <label>Número do Passaporte</label>
-            <input type="text" class="passaporte">
-
-            <label>País</label>
-            <select class="pais">
-                <option value="">Selecione o país</option>
-                <option>Brasil</option>
-                <option>Argentina</option>
-                <option>Chile</option>
-                <option>Estados Unidos</option>
-                <option>Portugal</option>
-                <option>Espanha</option>
-                <option>França</option>
-                <option>Alemanha</option>
-                <option>Itália</option>
-                <option>Japão</option>
-                <option>China</option>
-                <option>Canadá</option>
-                <option>Reino Unido</option>
-                <option>Outro</option>
-            </select>
+        <div class="aviso">
+        ⚠️ ATENÇÃO: NÃO ACEITAMOS DOCUMENTO EM PDF.<br>
+        Envie uma FOTO do documento (RG, CNH ou Passaporte) no formato JPG ou PNG.
         </div>
 
         <label>Documento (Envie FOTO em JPG ou PNG)</label>
@@ -181,38 +149,6 @@ function adicionarPessoa(){
     `;
 
     container.appendChild(card);
-}
-
-function usarMesmoEndereco(checkbox, index){
-
-    const cards = document.querySelectorAll(".card");
-
-    if(checkbox.checked){
-        const primeiroEndereco = cards[0].querySelector(".endereco").value;
-        const primeiroCEP = cards[0].querySelector(".cep").value;
-
-        cards[index-1].querySelector(".endereco").value = primeiroEndereco;
-        cards[index-1].querySelector(".cep").value = primeiroCEP;
-        cards[index-1].querySelector(".cep").required = false;
-    }else{
-        cards[index-1].querySelector(".cep").required = true;
-    }
-}
-
-function estrangeiroToggle(checkbox, index){
-
-    const card = document.querySelectorAll(".card")[index-1];
-
-    const cpfArea = card.querySelector(".cpfArea");
-    const passaporteArea = card.querySelector(".passaporteArea");
-
-    if(checkbox.checked){
-        cpfArea.style.display = "none";
-        passaporteArea.style.display = "block";
-    }else{
-        cpfArea.style.display = "block";
-        passaporteArea.style.display = "none";
-    }
 }
 
 adicionarPessoa();
