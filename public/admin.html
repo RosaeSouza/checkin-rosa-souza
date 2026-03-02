@@ -39,13 +39,11 @@ th{
   background:#2c5364;
   color:white;
 }
-button{
+.ver-btn{
   padding:6px 10px;
   border:none;
   border-radius:6px;
   cursor:pointer;
-}
-.ver-btn{
   background:#1abc9c;
   color:white;
 }
@@ -73,8 +71,8 @@ button{
 <script>
 
 fetch("/admin")
-.then(res=>res.json())
-.then(data=>{
+.then(res => res.json())
+.then(data => {
 
   const tbody = document.getElementById("tabelaBody");
 
@@ -92,8 +90,8 @@ fetch("/admin")
         <td>
           ${
             hospede.documentoUrl
-            ? `<a href="${hospede.documentoUrl}" download>
-                 <button class="ver-btn">Baixar Documento</button>
+            ? `<a href="${hospede.documentoUrl}" target="_blank">
+                 <button class="ver-btn">Abrir Documento</button>
                </a>`
             : "Não enviado"
           }
@@ -107,9 +105,9 @@ fetch("/admin")
   });
 
 })
-.catch(err=>{
-  console.error("Erro ao carregar admin:", err);
-  alert("Erro ao carregar dados.");
+.catch(err => {
+  console.error("Erro ao carregar dados:", err);
+  alert("Erro ao carregar painel.");
 });
 
 </script>
