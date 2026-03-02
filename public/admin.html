@@ -102,7 +102,7 @@ fetch("/admin")
         <td>
           ${
             hospede.documentoUrl
-            ? `<a href="${hospede.documentoUrl}" target="_blank">
+            ? `<a href="${hospede.documentoUrl}?fl_attachment=false" target="_blank">
                  <button class="ver-btn">Ver Documento</button>
                </a>`
             : "Não enviado"

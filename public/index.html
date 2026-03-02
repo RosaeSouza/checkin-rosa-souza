@@ -63,6 +63,13 @@ button{
     margin-top:15px;
     color:#777;
 }
+.suporte{
+    margin-top:30px;
+    padding:15px;
+    background:#f4f6f9;
+    border-radius:10px;
+    text-align:center;
+}
 </style>
 </head>
 
@@ -122,6 +129,12 @@ CONCORDO QUE MEUS DADOS SEJAM USADOS PARA CADASTRO, CONFORME LGPD.
 </label>
 
 <button type="button" onclick="finalizar()">Concluir Check-in</button>
+</div>
+
+<div class="suporte">
+<h3>Precisa de ajuda?</h3>
+<p>📱 WhatsApp: <strong>+55 35 99191-0441</strong></p>
+<p>📧 Email: <strong>denilsonsouza@me.com</strong></p>
 </div>
 
 <div class="footer">
@@ -218,7 +231,7 @@ async function finalizar(){
             body: formData
         });
 
-        alert("Check-in salvo com documento!");
+        alert("Check-in salvo com sucesso!");
         location.reload();
 
     }catch(err){
