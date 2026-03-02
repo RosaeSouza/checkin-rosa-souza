@@ -57,7 +57,6 @@ button{
 .add-btn{ background:#1abc9c; color:white; }
 .submit-btn{ background:#2c5364; color:white; }
 .regras{ display:none; margin-top:20px; }
-.regras ul{ font-size:13px; }
 .footer{
     text-align:center;
     font-size:11px;
@@ -73,13 +72,13 @@ button{
 
 <header>
 <h1>ROSA & SOUZA ADMINISTRADORA DE BENS</h1>
-<p>CHECKIN NOVO TESTE</p>
+<p>Check-in Digital</p>
 </header>
 
 <form id="formCadastro" enctype="multipart/form-data">
 
 <label>Estúdio</label>
-<select required>
+<select id="estudio" required>
 <option value="">Selecione</option>
 <option>Domy Vila Mariana 108</option>
 <option>Domy Vila Mariana 211</option>
@@ -94,10 +93,10 @@ button{
 </select>
 
 <label>Data Check-in</label>
-<input type="date" required>
+<input type="date" id="checkin" required>
 
 <label>Data Check-out</label>
-<input type="date" required>
+<input type="date" id="checkout" required>
 
 <div id="pessoasContainer"></div>
 
@@ -119,10 +118,10 @@ button{
 
 <label style="margin-top:15px;">
 <input type="checkbox" id="lgpdCheck">
-CONCORDO QUE MEUS DADOS SEJAM USADOS PARA EFEITO DE CADASTRO, INCLUSIVE O USO DO DOCUMENTO ENVIADO, CONFORME LGPD.
+CONCORDO QUE MEUS DADOS SEJAM USADOS PARA CADASTRO, CONFORME LGPD.
 </label>
 
-<button onclick="finalizar()">Concluir Check-in</button>
+<button type="button" onclick="finalizar()">Concluir Check-in</button>
 </div>
 
 <div class="footer">
@@ -146,12 +145,6 @@ function adicionarPessoa(){
 
     const container = document.getElementById("pessoasContainer");
 
-    const repetir = contador > 1 ?
-    `<label>
-        <input type="checkbox" onchange="usarMesmoEndereco(this,${contador})">
-        Mesmo endereço do primeiro hóspede
-    </label>` : "";
-
     const card = document.createElement("div");
     card.className = "card";
 
@@ -159,24 +152,22 @@ function adicionarPessoa(){
         <h4>Hóspede ${contador}</h4>
 
         <label>Nome Completo</label>
-        <input type="text" required>
+        <input type="text" class="nome" required>
 
         <label>CEP</label>
-        <input type="text" required>
+        <input type="text" class="cep" required>
 
         <label>Endereço Completo</label>
-        <input type="text" required>
-
-        ${repetir}
+        <input type="text" class="endereco" required>
 
         <label>Celular</label>
-        <input type="tel" required>
+        <input type="tel" class="celular" required>
 
         <label>CPF</label>
-        <input type="text" required>
+        <input type="text" class="cpf" required>
 
         <label>Documento (RG, CNH ou Passaporte)</label>
-        <input type="file" accept=".jpg,.jpeg,.png,.pdf" required>
+        <input type="file" class="documento" accept=".jpg,.jpeg,.png,.pdf" required>
     `;
 
     container.appendChild(card);
@@ -190,42 +181,40 @@ async function finalizar(){
         return;
     }
 
-    const estudio = document.querySelector("select").value;
-    const datas = document.querySelectorAll("input[type='date']");
-    const checkin = datas[0].value;
-    const checkout = datas[1].value;
+    const estudio = document.getElementById("estudio").value;
+    const checkin = document.getElementById("checkin").value;
+    const checkout = document.getElementById("checkout").value;
 
     const cards = document.querySelectorAll("#pessoasContainer .card");
 
-    const hospedes = [];
     const formData = new FormData();
+    const hospedes = [];
 
     formData.append("estudio", estudio);
     formData.append("checkin", checkin);
     formData.append("checkout", checkout);
 
-    cards.forEach((card,index)=>{
-        const inputs = card.querySelectorAll("input");
+    cards.forEach(card => {
 
-        hospedes.push({
-            nome: inputs[0].value,
-            cep: inputs[1].value,
-            endereco: inputs[2].value,
-            celular: inputs[4].value,
-            cpf: inputs[5].value
-        });
+        const nome = card.querySelector(".nome").value;
+        const cep = card.querySelector(".cep").value;
+        const endereco = card.querySelector(".endereco").value;
+        const celular = card.querySelector(".celular").value;
+        const cpf = card.querySelector(".cpf").value;
+        const fileInput = card.querySelector(".documento");
 
-       const fileInput = card.querySelector("input[type='file']");
-if(fileInput && fileInput.files.length > 0){
-    formData.append("documento", fileInput.files[0]);
-}
+        hospedes.push({ nome, cep, endereco, celular, cpf });
+
+        if(fileInput.files.length > 0){
+            formData.append("documento", fileInput.files[0]);
+        }
     });
 
     formData.append("hospedes", JSON.stringify(hospedes));
 
     try{
-        await fetch("/checkin",{
-            method:"POST",
+        await fetch("/checkin", {
+            method: "POST",
             body: formData
         });
 
@@ -233,12 +222,12 @@ if(fileInput && fileInput.files.length > 0){
         location.reload();
 
     }catch(err){
-        alert("Erro ao salvar.");
-        console.log(err);
+        console.error(err);
+        alert("Erro ao salvar check-in.");
     }
 }
 
-document.getElementById("formCadastro").addEventListener("submit",function(e){
+document.getElementById("formCadastro").addEventListener("submit", function(e){
     e.preventDefault();
     document.getElementById("formCadastro").style.display="none";
     document.getElementById("telaRegras").style.display="block";
