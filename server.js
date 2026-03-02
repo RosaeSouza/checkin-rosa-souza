@@ -32,10 +32,6 @@ cloudinary.config({
   api_secret: process.env.CLOUD_API_SECRET
 });
 
-/* 
-   resource_type: "auto" 
-   resolve automaticamente PDF, imagem e outros formatos
-*/
 const storage = new CloudinaryStorage({
   cloudinary: cloudinary,
   params: {
@@ -47,7 +43,7 @@ const storage = new CloudinaryStorage({
 const upload = multer({ storage });
 
 /* ===============================
-   SCHEMA MONGOOSE
+   SCHEMA
 ================================= */
 
 const CheckinSchema = new mongoose.Schema({
@@ -61,7 +57,10 @@ const CheckinSchema = new mongoose.Schema({
       endereco: String,
       celular: String,
       cpf: String,
-      documentoUrl: String
+      passaporte: String,
+      pais: String,
+      documentoUrl: String,
+      documentoPublicId: String
     }
   ],
   criadoEm: { type: Date, default: Date.now }
@@ -70,7 +69,7 @@ const CheckinSchema = new mongoose.Schema({
 const Checkin = mongoose.model("Checkin", CheckinSchema);
 
 /* ===============================
-   ROTA CHECKIN COM UPLOAD
+   ROTA CHECKIN
 ================================= */
 
 app.post("/checkin", upload.any(), async (req, res) => {
@@ -86,6 +85,7 @@ app.post("/checkin", upload.any(), async (req, res) => {
       req.files.forEach((file, index) => {
         if (hospedes[index]) {
           hospedes[index].documentoUrl = file.path;
+          hospedes[index].documentoPublicId = file.filename;
         }
       });
     }
@@ -108,12 +108,46 @@ app.post("/checkin", upload.any(), async (req, res) => {
 });
 
 /* ===============================
-   ROTA ADMIN (JSON)
+   ROTA ADMIN
 ================================= */
 
 app.get("/admin", async (req, res) => {
   const dados = await Checkin.find().sort({ criadoEm: -1 });
   res.json(dados);
+});
+
+/* ===============================
+   ROTA EXCLUIR CHECKIN
+================================= */
+
+app.delete("/checkin/:id", async (req, res) => {
+  try {
+
+    const checkin = await Checkin.findById(req.params.id);
+
+    if (!checkin) {
+      return res.status(404).json({ erro: "Registro não encontrado" });
+    }
+
+    // Deletar documentos do Cloudinary
+    for (const hospede of checkin.hospedes) {
+      if (hospede.documentoPublicId) {
+        await cloudinary.uploader.destroy(
+          hospede.documentoPublicId,
+          { resource_type: "auto" }
+        );
+      }
+    }
+
+    // Deletar do MongoDB
+    await Checkin.findByIdAndDelete(req.params.id);
+
+    res.json({ status: "Excluído com sucesso" });
+
+  } catch (err) {
+    console.error("ERRO AO EXCLUIR:", err);
+    res.status(500).json({ erro: err.message });
+  }
 });
 
 /* ===============================
