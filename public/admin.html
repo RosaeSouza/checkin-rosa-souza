@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Painel Administrativo</title>
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+
 <style>
 body{
   font-family:Poppins, sans-serif;
@@ -13,62 +14,110 @@ body{
 }
 h1{
   text-align:center;
+  margin-bottom:5px;
+}
+.sub{
+  text-align:center;
+  margin-bottom:20px;
+  font-size:14px;
 }
 table{
   width:100%;
   border-collapse:collapse;
-  margin-top:20px;
 }
 th, td{
   padding:10px;
   border-bottom:1px solid #ddd;
   font-size:14px;
+  text-align:center;
 }
 th{
   background:#2c5364;
   color:white;
 }
-tr:hover{
-  background:#f1f1f1;
+button{
+  padding:6px 10px;
+  border:none;
+  border-radius:6px;
+  cursor:pointer;
+}
+.ver-btn{
+  background:#1abc9c;
+  color:white;
+}
+.contato{
+  margin-top:40px;
+  padding:15px;
+  background:white;
+  border-radius:10px;
+  text-align:center;
+  box-shadow:0 5px 15px rgba(0,0,0,0.1);
 }
 </style>
 </head>
+
 <body>
 
 <h1>ROSA & SOUZA ADMINISTRADORA DE BENS</h1>
-<h2>Painel de Check-ins</h2>
+<div class="sub">Painel de Check-ins</div>
 
-<table id="tabela">
+<table>
 <thead>
 <tr>
 <th>Estúdio</th>
 <th>Check-in</th>
 <th>Check-out</th>
-<th>Hóspedes</th>
+<th>Hóspede</th>
+<th>Documento</th>
 </tr>
 </thead>
-<tbody></tbody>
+<tbody id="tabelaBody"></tbody>
 </table>
 
+<div class="contato">
+<h3>Suporte</h3>
+<p>📱 WhatsApp: <strong>+55 35 99191-0441</strong></p>
+<p>📧 Email: <strong>denilsonsouza@me.com</strong></p>
+</div>
+
 <script>
+
 fetch("/admin")
 .then(res=>res.json())
 .then(data=>{
-  const tbody=document.querySelector("tbody");
 
-  data.forEach(item=>{
-    const tr=document.createElement("tr");
+  const tbody = document.getElementById("tabelaBody");
 
-    tr.innerHTML=`
-      <td>${item.estudio}</td>
-      <td>${new Date(item.checkin).toLocaleDateString()}</td>
-      <td>${new Date(item.checkout).toLocaleDateString()}</td>
-      <td>${item.hospedes.length}</td>
-    `;
+  data.forEach(checkin => {
 
-    tbody.appendChild(tr);
+    checkin.hospedes.forEach(hospede => {
+
+      const tr = document.createElement("tr");
+
+      tr.innerHTML = `
+        <td>${checkin.estudio}</td>
+        <td>${new Date(checkin.checkin).toLocaleDateString()}</td>
+        <td>${new Date(checkin.checkout).toLocaleDateString()}</td>
+        <td>${hospede.nome}</td>
+        <td>
+          ${
+            hospede.documentoUrl
+            ? `<a href="${hospede.documentoUrl}" target="_blank">
+                 <button class="ver-btn">Ver Documento</button>
+               </a>`
+            : "Não enviado"
+          }
+        </td>
+      `;
+
+      tbody.appendChild(tr);
+
+    });
+
   });
+
 });
+
 </script>
 
 </body>
