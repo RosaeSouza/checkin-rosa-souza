@@ -24,6 +24,10 @@ h1{
 table{
   width:100%;
   border-collapse:collapse;
+  background:white;
+  border-radius:10px;
+  overflow:hidden;
+  box-shadow:0 5px 15px rgba(0,0,0,0.1);
 }
 th, td{
   padding:10px;
@@ -45,14 +49,6 @@ button{
   background:#1abc9c;
   color:white;
 }
-.contato{
-  margin-top:40px;
-  padding:15px;
-  background:white;
-  border-radius:10px;
-  text-align:center;
-  box-shadow:0 5px 15px rgba(0,0,0,0.1);
-}
 </style>
 </head>
 
@@ -73,12 +69,6 @@ button{
 </thead>
 <tbody id="tabelaBody"></tbody>
 </table>
-
-<div class="contato">
-<h3>Suporte</h3>
-<p>📱 WhatsApp: <strong>+55 35 99191-0441</strong></p>
-<p>📧 Email: <strong>denilsonsouza@me.com</strong></p>
-</div>
 
 <script>
 
@@ -102,8 +92,8 @@ fetch("/admin")
         <td>
           ${
             hospede.documentoUrl
-            ? `<a href="${hospede.documentoUrl}" target="_blank">
-                 <button class="ver-btn">Ver Documento</button>
+            ? `<a href="${hospede.documentoUrl}" download>
+                 <button class="ver-btn">Baixar Documento</button>
                </a>`
             : "Não enviado"
           }
@@ -116,6 +106,10 @@ fetch("/admin")
 
   });
 
+})
+.catch(err=>{
+  console.error("Erro ao carregar admin:", err);
+  alert("Erro ao carregar dados.");
 });
 
 </script>
