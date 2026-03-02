@@ -19,8 +19,8 @@ app.use(express.static("public"));
 ================================= */
 
 mongoose.connect(process.env.MONGO_URL)
-.then(() => console.log("Banco conectado"))
-.catch(err => console.log("Erro ao conectar:", err));
+  .then(() => console.log("Banco conectado"))
+  .catch(err => console.log("Erro ao conectar:", err));
 
 /* ===============================
    CONFIGURAÇÃO CLOUDINARY
@@ -32,21 +32,15 @@ cloudinary.config({
   api_secret: process.env.CLOUD_API_SECRET
 });
 
+/* 
+   resource_type: "auto" 
+   resolve automaticamente PDF, imagem e outros formatos
+*/
 const storage = new CloudinaryStorage({
   cloudinary: cloudinary,
-  params: async (req, file) => {
-
-    let resourceType = "image";
-
-    if (file.mimetype === "application/pdf") {
-      resourceType = "raw";
-    }
-
-    return {
-      folder: "documentos_checkin",
-      resource_type: resourceType,
-      allowed_formats: ["jpg", "jpeg", "png", "pdf"]
-    };
+  params: {
+    folder: "documentos_checkin",
+    resource_type: "auto"
   }
 });
 
