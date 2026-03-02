@@ -23,7 +23,7 @@ mongoose.connect(process.env.MONGO_URL)
   .catch(err => console.log("Erro ao conectar:", err));
 
 /* ===============================
-   CONFIGURAÇÃO CLOUDINARY
+   CLOUDINARY
 ================================= */
 
 cloudinary.config({
@@ -50,35 +50,42 @@ const CheckinSchema = new mongoose.Schema({
   estudio: String,
   checkin: Date,
   checkout: Date,
-  hospedes: [
-    {
-      nome: String,
-      cep: String,
-      endereco: String,
-      celular: String,
-      cpf: String,
-      passaporte: String,
-      pais: String,
-      documentoUrl: String,
-      documentoPublicId: String
-    }
-  ],
+  hospedes: [{
+    nome: String,
+    cep: String,
+    endereco: String,
+    celular: String,
+    cpf: String,
+    passaporte: String,
+    pais: String,
+    documentoUrl: String,
+    documentoPublicId: String
+  }],
   criadoEm: { type: Date, default: Date.now }
 });
 
 const Checkin = mongoose.model("Checkin", CheckinSchema);
 
 /* ===============================
-   ROTA CHECKIN
+   LOGIN ADMIN
+================================= */
+
+app.post("/admin-login", (req, res) => {
+  const { password } = req.body;
+
+  if(password === process.env.ADMIN_PASSWORD){
+    return res.json({ autorizado: true });
+  }
+
+  res.status(401).json({ autorizado: false });
+});
+
+/* ===============================
+   ROTAS
 ================================= */
 
 app.post("/checkin", upload.any(), async (req, res) => {
   try {
-
-    const estudio = req.body.estudio;
-    const checkin = req.body.checkin;
-    const checkout = req.body.checkout;
-
     const hospedes = JSON.parse(req.body.hospedes);
 
     if (req.files && req.files.length > 0) {
@@ -91,63 +98,39 @@ app.post("/checkin", upload.any(), async (req, res) => {
     }
 
     const novo = new Checkin({
-      estudio,
-      checkin,
-      checkout,
+      estudio: req.body.estudio,
+      checkin: req.body.checkin,
+      checkout: req.body.checkout,
       hospedes
     });
 
     await novo.save();
-
     res.json({ status: "salvo com sucesso" });
 
   } catch (err) {
-    console.error("ERRO AO SALVAR:", err);
     res.status(500).json({ erro: err.message });
   }
 });
 
-/* ===============================
-   ROTA ADMIN
-================================= */
-
 app.get("/admin", async (req, res) => {
-  const dados = await Checkin.find().sort({ criadoEm: -1 });
+  const dados = await Checkin.find().sort({ checkout: 1 });
   res.json(dados);
 });
 
-/* ===============================
-   ROTA EXCLUIR CHECKIN
-================================= */
-
 app.delete("/checkin/:id", async (req, res) => {
-  try {
+  const checkin = await Checkin.findById(req.params.id);
 
-    const checkin = await Checkin.findById(req.params.id);
-
-    if (!checkin) {
-      return res.status(404).json({ erro: "Registro não encontrado" });
+  for (const hospede of checkin.hospedes) {
+    if (hospede.documentoPublicId) {
+      await cloudinary.uploader.destroy(
+        hospede.documentoPublicId,
+        { resource_type: "auto" }
+      );
     }
-
-    // Deletar documentos do Cloudinary
-    for (const hospede of checkin.hospedes) {
-      if (hospede.documentoPublicId) {
-        await cloudinary.uploader.destroy(
-          hospede.documentoPublicId,
-          { resource_type: "auto" }
-        );
-      }
-    }
-
-    // Deletar do MongoDB
-    await Checkin.findByIdAndDelete(req.params.id);
-
-    res.json({ status: "Excluído com sucesso" });
-
-  } catch (err) {
-    console.error("ERRO AO EXCLUIR:", err);
-    res.status(500).json({ erro: err.message });
   }
+
+  await Checkin.findByIdAndDelete(req.params.id);
+  res.json({ status: "Excluído" });
 });
 
 /* ===============================
@@ -155,7 +138,6 @@ app.delete("/checkin/:id", async (req, res) => {
 ================================= */
 
 const PORT = process.env.PORT || 3000;
-
 app.listen(PORT, () => {
-  console.log("Servidor rodando na porta " + PORT);
+  console.log("Servidor rodando");
 });
