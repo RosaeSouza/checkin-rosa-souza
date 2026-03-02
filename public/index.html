@@ -215,7 +215,10 @@ async function finalizar(){
             cpf: inputs[5].value
         });
 
-        formData.append("documento", inputs[6].files[0]);
+       const fileInput = card.querySelector("input[type='file']");
+if(fileInput && fileInput.files.length > 0){
+    formData.append("documento", fileInput.files[0]);
+}
     });
 
     formData.append("hospedes", JSON.stringify(hospedes));
