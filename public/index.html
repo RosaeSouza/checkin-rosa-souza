@@ -21,9 +21,6 @@ body{
     border-radius:16px;
     box-shadow:0 15px 35px rgba(0,0,0,0.3);
 }
-header{text-align:center;margin-bottom:20px;}
-header h1{font-size:16px;color:#2c5364;margin:0;}
-header p{font-size:12px;color:#777;}
 label{
     font-size:12px;
     font-weight:600;
@@ -56,20 +53,6 @@ button{
 }
 .add-btn{ background:#1abc9c; color:white; }
 .submit-btn{ background:#2c5364; color:white; }
-.regras{ display:none; margin-top:20px; }
-.footer{
-    text-align:center;
-    font-size:11px;
-    margin-top:15px;
-    color:#777;
-}
-.suporte{
-    margin-top:30px;
-    padding:15px;
-    background:#f4f6f9;
-    border-radius:10px;
-    text-align:center;
-}
 </style>
 </head>
 
@@ -77,10 +60,7 @@ button{
 
 <div class="container">
 
-<header>
-<h1>ROSA & SOUZA ADMINISTRADORA DE BENS</h1>
-<p>Check-in Digital</p>
-</header>
+<h2 style="text-align:center;">ROSA & SOUZA ADMINISTRADORA DE BENS</h2>
 
 <form id="formCadastro" enctype="multipart/form-data">
 
@@ -112,33 +92,9 @@ button{
 
 </form>
 
-<div class="regras" id="telaRegras">
-<h3>Regras da Casa</h3>
-<ul>
-<li>🚭 NÃO É PERMITIDO FUMAR NO ESTÚDIO</li>
-<li>🔇 RESPEITAR A LEI DO SILÊNCIO</li>
-<li>🚫 NÃO É PERMITIDO RECEBER VISITAS NÃO CADASTRADAS</li>
-<li>⏰ RESPEITAR O HORÁRIO DE CHECK-OUT</li>
-<li>💰 DANOS SERÃO COBRADOS À PARTE</li>
-<li>🐶 NÃO É PERMITIDO PETS</li>
-</ul>
-
-<label style="margin-top:15px;">
-<input type="checkbox" id="lgpdCheck">
-CONCORDO QUE MEUS DADOS SEJAM USADOS PARA CADASTRO, CONFORME LGPD.
-</label>
-
-<button type="button" onclick="finalizar()">Concluir Check-in</button>
-</div>
-
-<div class="suporte">
-<h3>Precisa de ajuda?</h3>
+<div style="margin-top:30px;text-align:center;">
 <p>📱 WhatsApp: <strong>+55 35 99191-0441</strong></p>
 <p>📧 Email: <strong>denilsonsouza@me.com</strong></p>
-</div>
-
-<div class="footer">
-© 2026 ROSA & SOUZA ADMINISTRADORA DE BENS
 </div>
 
 </div>
@@ -149,6 +105,7 @@ let contador = 0;
 const maxPessoas = 6;
 
 function adicionarPessoa(){
+
     if(contador >= maxPessoas){
         alert("Máximo 6 hóspedes.");
         return;
@@ -157,6 +114,13 @@ function adicionarPessoa(){
     contador++;
 
     const container = document.getElementById("pessoasContainer");
+
+    const repetirEndereco = contador > 1 ? `
+        <label>
+            <input type="checkbox" onchange="usarMesmoEndereco(this, ${contador})">
+            Mesmo endereço do primeiro hóspede
+        </label>
+    ` : "";
 
     const card = document.createElement("div");
     card.className = "card";
@@ -173,78 +137,83 @@ function adicionarPessoa(){
         <label>Endereço Completo</label>
         <input type="text" class="endereco" required>
 
+        ${repetirEndereco}
+
         <label>Celular</label>
         <input type="tel" class="celular" required>
 
-        <label>CPF</label>
-        <input type="text" class="cpf" required>
+        <label>
+            <input type="checkbox" onchange="estrangeiroToggle(this, ${contador})">
+            Sou estrangeiro
+        </label>
 
-        <label>Documento (RG, CNH ou Passaporte)</label>
-        <input type="file" class="documento" accept=".jpg,.jpeg,.png,.pdf" required>
+        <div class="cpfArea">
+            <label>CPF</label>
+            <input type="text" class="cpf">
+        </div>
+
+        <div class="passaporteArea" style="display:none;">
+            <label>Número do Passaporte</label>
+            <input type="text" class="passaporte">
+
+            <label>País</label>
+            <select class="pais">
+                <option value="">Selecione o país</option>
+                <option>Brasil</option>
+                <option>Argentina</option>
+                <option>Chile</option>
+                <option>Estados Unidos</option>
+                <option>Portugal</option>
+                <option>Espanha</option>
+                <option>França</option>
+                <option>Alemanha</option>
+                <option>Itália</option>
+                <option>Japão</option>
+                <option>China</option>
+                <option>Canadá</option>
+                <option>Reino Unido</option>
+                <option>Outro</option>
+            </select>
+        </div>
+
+        <label>Documento (Envie FOTO em JPG ou PNG)</label>
+        <input type="file" class="documento" accept=".jpg,.jpeg,.png" required>
     `;
 
     container.appendChild(card);
 }
 
-async function finalizar(){
+function usarMesmoEndereco(checkbox, index){
 
-    const lgpd = document.getElementById("lgpdCheck");
-    if(!lgpd.checked){
-        alert("Você deve concordar com o termo LGPD.");
-        return;
-    }
+    const cards = document.querySelectorAll(".card");
 
-    const estudio = document.getElementById("estudio").value;
-    const checkin = document.getElementById("checkin").value;
-    const checkout = document.getElementById("checkout").value;
+    if(checkbox.checked){
+        const primeiroEndereco = cards[0].querySelector(".endereco").value;
+        const primeiroCEP = cards[0].querySelector(".cep").value;
 
-    const cards = document.querySelectorAll("#pessoasContainer .card");
-
-    const formData = new FormData();
-    const hospedes = [];
-
-    formData.append("estudio", estudio);
-    formData.append("checkin", checkin);
-    formData.append("checkout", checkout);
-
-    cards.forEach(card => {
-
-        const nome = card.querySelector(".nome").value;
-        const cep = card.querySelector(".cep").value;
-        const endereco = card.querySelector(".endereco").value;
-        const celular = card.querySelector(".celular").value;
-        const cpf = card.querySelector(".cpf").value;
-        const fileInput = card.querySelector(".documento");
-
-        hospedes.push({ nome, cep, endereco, celular, cpf });
-
-        if(fileInput.files.length > 0){
-            formData.append("documento", fileInput.files[0]);
-        }
-    });
-
-    formData.append("hospedes", JSON.stringify(hospedes));
-
-    try{
-        await fetch("/checkin", {
-            method: "POST",
-            body: formData
-        });
-
-        alert("Check-in salvo com sucesso!");
-        location.reload();
-
-    }catch(err){
-        console.error(err);
-        alert("Erro ao salvar check-in.");
+        cards[index-1].querySelector(".endereco").value = primeiroEndereco;
+        cards[index-1].querySelector(".cep").value = primeiroCEP;
+        cards[index-1].querySelector(".cep").required = false;
+    }else{
+        cards[index-1].querySelector(".cep").required = true;
     }
 }
 
-document.getElementById("formCadastro").addEventListener("submit", function(e){
-    e.preventDefault();
-    document.getElementById("formCadastro").style.display="none";
-    document.getElementById("telaRegras").style.display="block";
-});
+function estrangeiroToggle(checkbox, index){
+
+    const card = document.querySelectorAll(".card")[index-1];
+
+    const cpfArea = card.querySelector(".cpfArea");
+    const passaporteArea = card.querySelector(".passaporteArea");
+
+    if(checkbox.checked){
+        cpfArea.style.display = "none";
+        passaporteArea.style.display = "block";
+    }else{
+        cpfArea.style.display = "block";
+        passaporteArea.style.display = "none";
+    }
+}
 
 adicionarPessoa();
 
