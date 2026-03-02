@@ -13,7 +13,6 @@ body{
     margin:0;
     padding:20px;
 }
-
 .container{
     max-width:520px;
     margin:auto;
@@ -22,18 +21,15 @@ body{
     border-radius:16px;
     box-shadow:0 15px 35px rgba(0,0,0,0.3);
 }
-
 header{text-align:center;margin-bottom:20px;}
 header h1{font-size:16px;color:#2c5364;margin:0;}
 header p{font-size:12px;color:#777;}
-
 label{
     font-size:12px;
     font-weight:600;
     margin-top:10px;
     display:block;
 }
-
 input, select{
     width:100%;
     padding:12px;
@@ -43,14 +39,12 @@ input, select{
     font-size:14px;
     background:#f9f9f9;
 }
-
 .card{
     background:#f4f6f9;
     padding:15px;
     border-radius:12px;
     margin-top:15px;
 }
-
 button{
     width:100%;
     padding:14px;
@@ -60,13 +54,10 @@ button{
     font-weight:600;
     cursor:pointer;
 }
-
 .add-btn{ background:#1abc9c; color:white; }
 .submit-btn{ background:#2c5364; color:white; }
-
 .regras{ display:none; margin-top:20px; }
 .regras ul{ font-size:13px; }
-
 .footer{
     text-align:center;
     font-size:11px;
@@ -85,7 +76,7 @@ button{
 <p>Check-in Digital</p>
 </header>
 
-<form id="formCadastro">
+<form id="formCadastro" enctype="multipart/form-data">
 
 <label>Estúdio</label>
 <select required>
@@ -128,7 +119,7 @@ button{
 
 <label style="margin-top:15px;">
 <input type="checkbox" id="lgpdCheck">
-CONCORDO QUE MEUS DADOS SEJAM USADOS PARA EFEITO DE CADASTRO, INCLUSIVE O USO DO DOCUMENTO ENVIADO, CONFORME LEI DE PROTEÇÃO DE DADOS (LGPD).
+CONCORDO QUE MEUS DADOS SEJAM USADOS PARA EFEITO DE CADASTRO, INCLUSIVE O USO DO DOCUMENTO ENVIADO, CONFORME LGPD.
 </label>
 
 <button onclick="finalizar()">Concluir Check-in</button>
@@ -141,45 +132,9 @@ CONCORDO QUE MEUS DADOS SEJAM USADOS PARA EFEITO DE CADASTRO, INCLUSIVE O USO DO
 </div>
 
 <script>
+
 let contador = 0;
 const maxPessoas = 6;
-
-function validarCPF(cpf){
-    cpf = cpf.replace(/[^\d]+/g,'');
-    if(cpf.length !== 11 || /^(\d)\1+$/.test(cpf)) return false;
-
-    let soma = 0;
-    for(let i=0;i<9;i++)
-        soma += parseInt(cpf.charAt(i)) * (10 - i);
-
-    let resto = 11 - (soma % 11);
-    if(resto >= 10) resto = 0;
-    if(resto != parseInt(cpf.charAt(9))) return false;
-
-    soma = 0;
-    for(let i=0;i<10;i++)
-        soma += parseInt(cpf.charAt(i)) * (11 - i);
-
-    resto = 11 - (soma % 11);
-    if(resto >= 10) resto = 0;
-    if(resto != parseInt(cpf.charAt(10))) return false;
-
-    return true;
-}
-
-function buscarCEP(cep,index){
-    cep = cep.replace(/\D/g,'');
-    if(cep.length !== 8) return;
-
-    fetch("https://viacep.com.br/ws/"+cep+"/json/")
-    .then(res => res.json())
-    .then(data => {
-        if(!data.erro){
-            document.getElementById("endereco_"+index).value =
-                data.logradouro+", "+data.bairro+" - "+data.localidade+"/"+data.uf;
-        }
-    });
-}
 
 function adicionarPessoa(){
     if(contador >= maxPessoas){
@@ -207,10 +162,10 @@ function adicionarPessoa(){
         <input type="text" required>
 
         <label>CEP</label>
-        <input type="text" id="cep_${contador}" onblur="buscarCEP(this.value,${contador})" required>
+        <input type="text" required>
 
         <label>Endereço Completo</label>
-        <input type="text" id="endereco_${contador}" required>
+        <input type="text" required>
 
         ${repetir}
 
@@ -218,28 +173,13 @@ function adicionarPessoa(){
         <input type="tel" required>
 
         <label>CPF</label>
-        <input type="text" class="cpf" required>
+        <input type="text" required>
 
-        <label>Documento</label>
-        <input type="file" accept="image/*" required>
+        <label>Documento (RG, CNH ou Passaporte)</label>
+        <input type="file" accept=".jpg,.jpeg,.png,.pdf" required>
     `;
 
     container.appendChild(card);
-}
-
-function usarMesmoEndereco(checkbox,index){
-    const cepField = document.getElementById("cep_"+index);
-    const endField = document.getElementById("endereco_"+index);
-
-    if(checkbox.checked){
-        endField.value = document.getElementById("endereco_1").value;
-        cepField.required = false;
-        cepField.disabled = true;
-    }else{
-        cepField.required = true;
-        cepField.disabled = false;
-        endField.value = "";
-    }
 }
 
 async function finalizar(){
@@ -255,10 +195,16 @@ async function finalizar(){
     const checkin = datas[0].value;
     const checkout = datas[1].value;
 
-    const hospedes = [];
     const cards = document.querySelectorAll("#pessoasContainer .card");
 
-    cards.forEach(card=>{
+    const hospedes = [];
+    const formData = new FormData();
+
+    formData.append("estudio", estudio);
+    formData.append("checkin", checkin);
+    formData.append("checkout", checkout);
+
+    cards.forEach((card,index)=>{
         const inputs = card.querySelectorAll("input");
 
         hospedes.push({
@@ -268,48 +214,35 @@ async function finalizar(){
             celular: inputs[4].value,
             cpf: inputs[5].value
         });
+
+        formData.append("documento", inputs[6].files[0]);
     });
 
-    const dados = {
-        estudio,
-        checkin,
-        checkout,
-        hospedes
-    };
+    formData.append("hospedes", JSON.stringify(hospedes));
 
     try{
         await fetch("/checkin",{
             method:"POST",
-            headers:{ "Content-Type":"application/json" },
-            body: JSON.stringify(dados)
+            body: formData
         });
 
-        alert("Check-in salvo com sucesso!");
+        alert("Check-in salvo com documento!");
         location.reload();
 
-    }catch(erro){
-        alert("Erro ao salvar check-in.");
+    }catch(err){
+        alert("Erro ao salvar.");
+        console.log(err);
     }
 }
 
 document.getElementById("formCadastro").addEventListener("submit",function(e){
     e.preventDefault();
-
-    const cpfs = document.querySelectorAll(".cpf");
-
-    for(let cpfInput of cpfs){
-        if(!validarCPF(cpfInput.value)){
-            alert("CPF inválido.");
-            cpfInput.focus();
-            return;
-        }
-    }
-
     document.getElementById("formCadastro").style.display="none";
     document.getElementById("telaRegras").style.display="block";
 });
 
 adicionarPessoa();
+
 </script>
 
 </body>
