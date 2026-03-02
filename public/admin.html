@@ -12,7 +12,7 @@ body{
   background:#f4f6f9;
   padding:20px;
 }
-h1{text-align:center;}
+h1{text-align:center;margin-bottom:20px;}
 table{
   width:100%;
   border-collapse:collapse;
@@ -23,6 +23,7 @@ th, td{
   padding:10px;
   border-bottom:1px solid #ddd;
   text-align:center;
+  font-size:13px;
 }
 th{
   background:#2c5364;
@@ -50,6 +51,7 @@ th{
 <th>Check-in</th>
 <th>Check-out</th>
 <th>Hóspede</th>
+<th>CPF / Passaporte</th>
 <th>Documento</th>
 </tr>
 </thead>
@@ -64,12 +66,21 @@ fetch("/admin")
 
   data.forEach(checkin=>{
     checkin.hospedes.forEach(hospede=>{
+
+      const documentoIdentificacao =
+        hospede.cpf
+          ? hospede.cpf
+          : hospede.passaporte
+            ? hospede.passaporte + (hospede.pais ? " (" + hospede.pais + ")" : "")
+            : "Não informado";
+
       const tr=document.createElement("tr");
       tr.innerHTML=`
         <td>${checkin.estudio}</td>
         <td>${new Date(checkin.checkin).toLocaleDateString()}</td>
         <td>${new Date(checkin.checkout).toLocaleDateString()}</td>
         <td>${hospede.nome}</td>
+        <td>${documentoIdentificacao}</td>
         <td>
           ${hospede.documentoUrl
             ? `<a href="${hospede.documentoUrl}" target="_blank">
