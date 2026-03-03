@@ -118,14 +118,32 @@ app.get("/admin", async (req, res) => {
 });
 
 app.delete("/checkin/:id", async (req, res) => {
-  const checkin = await Checkin.findById(req.params.id);
+  try {
+    const checkin = await Checkin.findById(req.params.id);
 
-  for (const hospede of checkin.hospedes) {
-    if (hospede.documentoPublicId) {
-      await cloudinary.uploader.destroy(
-        hospede.documentoPublicId,
-        { resource_type: "auto" }
-      );
+    if (!checkin) {
+      return res.status(404).json({ erro: "Reserva não encontrada" });
+    }
+
+    // Apagar documentos do Cloudinary
+    for (const hospede of checkin.hospedes) {
+      if (hospede.documentoPublicId) {
+        await cloudinary.uploader.destroy(
+          hospede.documentoPublicId,
+          { resource_type: "auto" }
+        );
+      }
+    }
+
+    await Checkin.findByIdAndDelete(req.params.id);
+
+    res.json({ status: "Excluído com sucesso" });
+
+  } catch (error) {
+    console.error("Erro ao excluir:", error);
+    res.status(500).json({ erro: "Erro interno ao excluir" });
+  }
+});
     }
   }
 
