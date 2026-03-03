@@ -77,7 +77,7 @@ button{
 <form id="formCadastro" enctype="multipart/form-data">
 
 <label>Estúdio</label>
-<select id="estudio" required>
+<select name="estudio" required>
 <option value="">Selecione</option>
 <option>Domy Vila Mariana 108</option>
 <option>Domy Vila Mariana 211</option>
@@ -92,10 +92,10 @@ button{
 </select>
 
 <label>Data Check-in</label>
-<input type="date" id="checkin" required>
+<input type="date" name="checkin" required>
 
 <label>Data Check-out</label>
-<input type="date" id="checkout" required>
+<input type="date" name="checkout" required>
 
 <div id="pessoasContainer"></div>
 
@@ -119,47 +119,44 @@ const maxPessoas = 6;
 function validarCPF(cpf){
     cpf = cpf.replace(/[^\d]+/g,'');
     if(cpf.length !== 11 || /^(\d)\1+$/.test(cpf)) return false;
-
     let soma=0;
-    for(let i=0;i<9;i++)
-        soma+=parseInt(cpf.charAt(i))*(10-i);
+    for(let i=0;i<9;i++) soma+=parseInt(cpf.charAt(i))*(10-i);
     let resto=11-(soma%11);
     if(resto>=10) resto=0;
     if(resto!=parseInt(cpf.charAt(9))) return false;
-
     soma=0;
-    for(let i=0;i<10;i++)
-        soma+=parseInt(cpf.charAt(i))*(11-i);
+    for(let i=0;i<10;i++) soma+=parseInt(cpf.charAt(i))*(11-i);
     resto=11-(soma%11);
     if(resto>=10) resto=0;
     if(resto!=parseInt(cpf.charAt(10))) return false;
-
     return true;
 }
 
 function buscarCEP(cep,index){
-    cep=cep.replace(/\D/g,'');
-    if(cep.length!==8) return;
+    cep = cep.replace(/\D/g,'');
+    if(cep.length !== 8) return;
 
     fetch(`https://viacep.com.br/ws/${cep}/json/`)
-    .then(res=>res.json())
-    .then(data=>{
+    .then(res => {
+        if(!res.ok) throw new Error();
+        return res.json();
+    })
+    .then(data => {
         if(!data.erro){
-            document.getElementById("endereco_"+index).value=
-            data.logradouro+", "+data.bairro+" - "+data.localidade+"/"+data.uf;
+            document.getElementById("endereco_"+index).value =
+            data.logradouro + ", " + data.bairro + " - " + data.localidade + "/" + data.uf;
         }
-    });
+    })
+    .catch(()=>{});
 }
 
 function adicionarPessoa(){
-
     if(contador>=maxPessoas){
         alert("Máximo 6 hóspedes.");
         return;
     }
 
     contador++;
-
     const container=document.getElementById("pessoasContainer");
 
     const repetir=contador>1?`
@@ -174,7 +171,7 @@ function adicionarPessoa(){
         <h4>Hóspede ${contador}</h4>
 
         <label>Nome Completo</label>
-        <input type="text" required>
+        <input type="text" class="nome" required>
 
         <label>CEP</label>
         <input type="text" id="cep_${contador}" onblur="buscarCEP(this.value,${contador})" required>
@@ -185,7 +182,7 @@ function adicionarPessoa(){
         ${repetir}
 
         <label>Celular</label>
-        <input type="tel" required>
+        <input type="tel" class="celular" required>
 
         <label>
         <input type="checkbox" onchange="estrangeiroToggle(this,${contador})">
@@ -199,31 +196,18 @@ function adicionarPessoa(){
 
         <div id="passaporteArea_${contador}" style="display:none;">
             <label>Passaporte</label>
-            <input type="text">
-
+            <input type="text" class="passaporte">
             <label>País</label>
-            <select>
-                <option value="">Selecione</option>
-                <option>Brasil</option>
-                <option>Argentina</option>
-                <option>Estados Unidos</option>
-                <option>Portugal</option>
-                <option>França</option>
-                <option>Alemanha</option>
-                <option>Itália</option>
-                <option>Reino Unido</option>
-                <option>Japão</option>
-                <option>Outro</option>
-            </select>
+            <input type="text" class="pais">
         </div>
 
         <div class="aviso">
         ⚠️ NÃO ACEITAMOS DOCUMENTO EM PDF.<br>
-        Envie uma FOTO do documento (JPG ou PNG).
+        Envie FOTO do documento em JPG ou PNG.
         </div>
 
         <label>Documento</label>
-        <input type="file" accept=".jpg,.jpeg,.png" required>
+        <input type="file" name="documento" accept=".jpg,.jpeg,.png" required>
     `;
 
     container.appendChild(card);
@@ -260,6 +244,52 @@ function estrangeiroToggle(checkbox,index){
 
 adicionarPessoa();
 
+/* ENVIO PARA O SERVIDOR */
+
+document.getElementById("formCadastro").addEventListener("submit",function(e){
+    e.preventDefault();
+
+    const formData = new FormData(this);
+
+    const hospedes = [];
+
+    const cards = document.querySelectorAll(".card");
+
+    for(let card of cards){
+
+        const cpfInput = card.querySelector(".cpf");
+        if(cpfInput && cpfInput.required && !validarCPF(cpfInput.value)){
+            alert("CPF inválido.");
+            return;
+        }
+
+        hospedes.push({
+            nome: card.querySelector(".nome").value,
+            cep: card.querySelector("[id^='cep_']").value,
+            endereco: card.querySelector("[id^='endereco_']").value,
+            celular: card.querySelector(".celular").value,
+            cpf: cpfInput ? cpfInput.value : "",
+            passaporte: card.querySelector(".passaporte")?.value || "",
+            pais: card.querySelector(".pais")?.value || ""
+        });
+    }
+
+    formData.append("hospedes", JSON.stringify(hospedes));
+
+    fetch("/checkin",{
+        method:"POST",
+        body:formData
+    })
+    .then(res=>res.json())
+    .then(()=>{
+        alert("Check-in salvo com sucesso!");
+        location.reload();
+    })
+    .catch(()=>{
+        alert("Erro ao salvar check-in.");
+    });
+
+});
 </script>
 
 </body>
