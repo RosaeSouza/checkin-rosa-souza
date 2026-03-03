@@ -73,7 +73,7 @@ const Checkin = mongoose.model("Checkin", CheckinSchema);
 app.post("/admin-login", (req, res) => {
   const { password } = req.body;
 
-  if(password === process.env.ADMIN_PASSWORD){
+  if (password === process.env.ADMIN_PASSWORD) {
     return res.json({ autorizado: true });
   }
 
@@ -108,14 +108,23 @@ app.post("/checkin", upload.any(), async (req, res) => {
     res.json({ status: "salvo com sucesso" });
 
   } catch (err) {
+    console.error(err);
     res.status(500).json({ erro: err.message });
   }
 });
 
 app.get("/admin", async (req, res) => {
-  const dados = await Checkin.find().sort({ checkout: 1 });
-  res.json(dados);
+  try {
+    const dados = await Checkin.find().sort({ checkout: 1 });
+    res.json(dados);
+  } catch (err) {
+    res.status(500).json({ erro: err.message });
+  }
 });
+
+/* ===============================
+   DELETE CHECKIN (CORRIGIDO)
+================================= */
 
 app.delete("/checkin/:id", async (req, res) => {
   try {
@@ -125,7 +134,6 @@ app.delete("/checkin/:id", async (req, res) => {
       return res.status(404).json({ erro: "Reserva não encontrada" });
     }
 
-    // Apagar documentos do Cloudinary
     for (const hospede of checkin.hospedes) {
       if (hospede.documentoPublicId) {
         await cloudinary.uploader.destroy(
@@ -144,18 +152,13 @@ app.delete("/checkin/:id", async (req, res) => {
     res.status(500).json({ erro: "Erro interno ao excluir" });
   }
 });
-    }
-  }
-
-  await Checkin.findByIdAndDelete(req.params.id);
-  res.json({ status: "Excluído" });
-});
 
 /* ===============================
    SERVIDOR
 ================================= */
 
 const PORT = process.env.PORT || 3000;
+
 app.listen(PORT, () => {
   console.log("Servidor rodando");
 });
