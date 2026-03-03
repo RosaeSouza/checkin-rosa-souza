@@ -114,6 +114,11 @@ function renderEstudios(){
     const tela = document.getElementById("telaEstudios");
     tela.innerHTML = "";
 
+    if(todosDados.length === 0){
+        tela.innerHTML = "<p style='text-align:center;margin-top:40px;'>Nenhuma reserva cadastrada ainda.</p>";
+        return;
+    }
+
     const estudios = [...new Set(todosDados.map(r => r.estudio))];
 
     estudios.forEach(est=>{
@@ -168,7 +173,12 @@ function renderCards(lista, containerId){
             <p><strong>Entrada:</strong> ${formatarData(r.checkin)}</p>
             <p><strong>Saída:</strong> ${formatarData(r.checkout)}</p>
 
-            <button class="action-btn ver-btn" onclick="verDocumento('${r._id}')">Ver Documento</button>
+            ${doc.documentoUrl 
+              ? `<a href="${doc.documentoUrl}" target="_blank">
+                   <button class="action-btn ver-btn">Ver Documento</button>
+                 </a>`
+              : `<p style="color:#888;">Documento não enviado</p>`}
+
             <button class="action-btn del-btn" onclick="excluirReserva('${r._id}')">Excluir</button>
         `;
 
@@ -200,10 +210,6 @@ function excluirReserva(id){
         alert("Reserva excluída com sucesso!");
         location.reload();
     });
-}
-
-function verDocumento(id){
-    window.open("/checkin/documento/" + id, "_blank");
 }
 
 </script>
