@@ -21,6 +21,7 @@ body{
     border-radius:16px;
     box-shadow:0 15px 35px rgba(0,0,0,0.3);
 }
+h2{text-align:center;}
 label{
     font-size:12px;
     font-weight:600;
@@ -65,6 +66,14 @@ button{
     text-align:center;
     font-weight:600;
 }
+
+.regras{
+    display:none;
+    margin-top:20px;
+}
+.regras ul{
+    font-size:13px;
+}
 </style>
 </head>
 
@@ -72,7 +81,7 @@ button{
 
 <div class="container">
 
-<h2 style="text-align:center;">ROSA & SOUZA ADMINISTRADORA DE BENS</h2>
+<h2>ROSA & SOUZA ADMINISTRADORA DE BENS</h2>
 
 <form id="formCadastro" enctype="multipart/form-data">
 
@@ -104,7 +113,26 @@ button{
 
 </form>
 
-<div style="margin-top:30px;text-align:center;">
+<div class="regras" id="telaRegras">
+<h3>Regras da Casa</h3>
+<ul>
+<li>🚭 NÃO É PERMITIDO FUMAR NO ESTÚDIO</li>
+<li>🔇 RESPEITAR A LEI DO SILÊNCIO</li>
+<li>🚫 NÃO É PERMITIDO RECEBER VISITAS NÃO CADASTRADAS</li>
+<li>⏰ RESPEITAR O HORÁRIO DE CHECK-OUT</li>
+<li>💰 DANOS SERÃO COBRADOS À PARTE</li>
+<li>🐶 NÃO É PERMITIDO PETS</li>
+</ul>
+
+<label style="margin-top:15px;">
+<input type="checkbox" id="lgpdCheck">
+CONCORDO QUE MEUS DADOS SEJAM USADOS PARA CADASTRO, INCLUSIVE O USO DO DOCUMENTO ENVIADO, CONFORME LEI DE PROTEÇÃO DE DADOS (LGPD).
+</label>
+
+<button onclick="finalizar()">Concluir Check-in</button>
+</div>
+
+<div style="margin-top:25px;text-align:center;">
 <p>📱 WhatsApp: <strong>+55 35 99191-0441</strong></p>
 <p>📧 Email: <strong>denilsonsouza@me.com</strong></p>
 </div>
@@ -137,14 +165,11 @@ function buscarCEP(cep,index){
     if(cep.length !== 8) return;
 
     fetch(`https://viacep.com.br/ws/${cep}/json/`)
-    .then(res => {
-        if(!res.ok) throw new Error();
-        return res.json();
-    })
-    .then(data => {
-        if(!data.erro){
+    .then(res=>res.ok ? res.json() : null)
+    .then(data=>{
+        if(data && !data.erro){
             document.getElementById("endereco_"+index).value =
-            data.logradouro + ", " + data.bairro + " - " + data.localidade + "/" + data.uf;
+            data.logradouro+", "+data.bairro+" - "+data.localidade+"/"+data.uf;
         }
     })
     .catch(()=>{});
@@ -157,6 +182,7 @@ function adicionarPessoa(){
     }
 
     contador++;
+
     const container=document.getElementById("pessoasContainer");
 
     const repetir=contador>1?`
@@ -184,22 +210,8 @@ function adicionarPessoa(){
         <label>Celular</label>
         <input type="tel" class="celular" required>
 
-        <label>
-        <input type="checkbox" onchange="estrangeiroToggle(this,${contador})">
-        Sou estrangeiro
-        </label>
-
-        <div id="cpfArea_${contador}">
-            <label>CPF</label>
-            <input type="text" class="cpf" required>
-        </div>
-
-        <div id="passaporteArea_${contador}" style="display:none;">
-            <label>Passaporte</label>
-            <input type="text" class="passaporte">
-            <label>País</label>
-            <input type="text" class="pais">
-        </div>
+        <label>CPF</label>
+        <input type="text" class="cpf" required>
 
         <div class="aviso">
         ⚠️ NÃO ACEITAMOS DOCUMENTO EM PDF.<br>
@@ -227,58 +239,53 @@ function usarMesmoEndereco(checkbox,index){
     }
 }
 
-function estrangeiroToggle(checkbox,index){
-    const cpfArea=document.getElementById("cpfArea_"+index);
-    const passaporteArea=document.getElementById("passaporteArea_"+index);
-
-    if(checkbox.checked){
-        cpfArea.style.display="none";
-        cpfArea.querySelector("input").required=false;
-        passaporteArea.style.display="block";
-    }else{
-        cpfArea.style.display="block";
-        cpfArea.querySelector("input").required=true;
-        passaporteArea.style.display="none";
-    }
-}
-
 adicionarPessoa();
 
-/* ENVIO PARA O SERVIDOR */
+let dadosForm;
 
 document.getElementById("formCadastro").addEventListener("submit",function(e){
     e.preventDefault();
 
-    const formData = new FormData(this);
-
-    const hospedes = [];
-
-    const cards = document.querySelectorAll(".card");
-
-    for(let card of cards){
-
-        const cpfInput = card.querySelector(".cpf");
-        if(cpfInput && cpfInput.required && !validarCPF(cpfInput.value)){
+    const cpfs=document.querySelectorAll(".cpf");
+    for(let cpfInput of cpfs){
+        if(!validarCPF(cpfInput.value)){
             alert("CPF inválido.");
             return;
         }
-
-        hospedes.push({
-            nome: card.querySelector(".nome").value,
-            cep: card.querySelector("[id^='cep_']").value,
-            endereco: card.querySelector("[id^='endereco_']").value,
-            celular: card.querySelector(".celular").value,
-            cpf: cpfInput ? cpfInput.value : "",
-            passaporte: card.querySelector(".passaporte")?.value || "",
-            pais: card.querySelector(".pais")?.value || ""
-        });
     }
 
-    formData.append("hospedes", JSON.stringify(hospedes));
+    dadosForm = new FormData(this);
+
+    const hospedes=[];
+    const cards=document.querySelectorAll(".card");
+
+    cards.forEach((card,index)=>{
+        hospedes.push({
+            nome: card.querySelector(".nome").value,
+            cep: card.querySelector("#cep_"+(index+1)).value,
+            endereco: card.querySelector("#endereco_"+(index+1)).value,
+            celular: card.querySelector(".celular").value,
+            cpf: card.querySelector(".cpf").value
+        });
+    });
+
+    dadosForm.append("hospedes", JSON.stringify(hospedes));
+
+    document.getElementById("formCadastro").style.display="none";
+    document.getElementById("telaRegras").style.display="block";
+});
+
+function finalizar(){
+
+    const lgpd=document.getElementById("lgpdCheck");
+    if(!lgpd.checked){
+        alert("Você deve concordar com o termo LGPD.");
+        return;
+    }
 
     fetch("/checkin",{
         method:"POST",
-        body:formData
+        body:dadosForm
     })
     .then(res=>res.json())
     .then(()=>{
@@ -288,8 +295,8 @@ document.getElementById("formCadastro").addEventListener("submit",function(e){
     .catch(()=>{
         alert("Erro ao salvar check-in.");
     });
+}
 
-});
 </script>
 
 </body>
