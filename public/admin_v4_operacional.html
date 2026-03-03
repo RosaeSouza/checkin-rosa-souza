@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin Operacional | Rosa & Souza</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
+
+<style>
+body{
+    font-family:'Poppins', sans-serif;
+    background:#f4f6f9;
+    margin:0;
+    padding:15px;
+}
+
+.container{
+    max-width:700px;
+    margin:auto;
+}
+
+h2{
+    text-align:center;
+    margin-bottom:10px;
+}
+
+.section{
+    background:white;
+    padding:15px;
+    border-radius:12px;
+    margin-bottom:20px;
+    box-shadow:0 4px 10px rgba(0,0,0,0.05);
+}
+
+.section h3{
+    margin-top:0;
+}
+
+.estudio-item{
+    padding:6px 0;
+    font-size:14px;
+    border-bottom:1px solid #eee;
+}
+
+.btn{
+    width:100%;
+    padding:14px;
+    border:none;
+    border-radius:10px;
+    font-weight:600;
+    cursor:pointer;
+    margin-top:10px;
+}
+
+.btn-primary{ background:#2c5364; color:white; }
+.btn-green{ background:#27ae60; color:white; }
+.btn-gray{ background:#7f8c8d; color:white; }
+
+input{
+    width:100%;
+    padding:10px;
+    margin-top:5px;
+    border-radius:8px;
+    border:1px solid #ccc;
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<h2>Painel Operacional</h2>
+
+<div class="section" id="dashboard"></div>
+
+<button class="btn btn-primary" onclick="abrirLimpeza()">LIMPEZA</button>
+
+<div id="limpezaSection" style="display:none;"></div>
+
+</div>
+
+<script>
+
+let todosDados = [];
+let valorLimpeza = localStorage.getItem("valorLimpeza") || 120;
+let pagamentos = JSON.parse(localStorage.getItem("pagamentosLimpeza") || "[]");
+
+fetch("/admin")
+.then(res=>res.json())
+.then(data=>{
+    todosDados = data;
+    renderDashboard();
+});
+
+function renderDashboard(){
+    const hoje = new Date();
+    hoje.setHours(0,0,0,0);
+
+    const seteDias = new Date();
+    seteDias.setDate(hoje.getDate() + 7);
+
+    const checkoutsHoje = todosDados.filter(r=>{
+        const d = new Date(r.checkout);
+        d.setHours(0,0,0,0);
+        return d.getTime() === hoje.getTime();
+    });
+
+    const proximos = todosDados.filter(r=>{
+        const d = new Date(r.checkout);
+        return d > hoje && d <= seteDias;
+    });
+
+    let html = "<h3>📅 Check-outs Hoje</h3>";
+
+    if(checkoutsHoje.length === 0){
+        html += "<p>Nenhum check-out hoje.</p>";
+    } else {
+        checkoutsHoje.forEach(r=>{
+            html += `
+            <div class="estudio-item">
+            <strong>${r.estudio}</strong> — ${r.hospedes[0].nome}
+            </div>`;
+        });
+    }
+
+    html += "<h3 style='margin-top:15px;'>📅 Próximos 7 dias</h3>";
+
+    if(proximos.length === 0){
+        html += "<p>Nenhum check-out nos próximos 7 dias.</p>";
+    } else {
+        proximos.sort((a,b)=>new Date(a.checkout)-new Date(b.checkout));
+        proximos.forEach(r=>{
+            html += `
+            <div class="estudio-item">
+            ${formatarData(r.checkout)} — <strong>${r.estudio}</strong> — ${r.hospedes[0].nome}
+            </div>`;
+        });
+    }
+
+    document.getElementById("dashboard").innerHTML = html;
+}
+
+function abrirLimpeza(){
+    const sec = document.getElementById("limpezaSection");
+    sec.style.display = "block";
+    renderLimpeza();
+}
+
+function renderLimpeza(){
+
+    const hoje = new Date();
+    const mesAtual = hoje.getMonth();
+    const anoAtual = hoje.getFullYear();
+
+    const realizadas = todosDados.filter(r=>{
+        const d = new Date(r.checkout);
+        return d < hoje && d.getMonth() === mesAtual && d.getFullYear() === anoAtual;
+    });
+
+    const totalLimpezas = realizadas.length;
+    const totalDevido = totalLimpezas * valorLimpeza;
+    const totalPago = pagamentos.reduce((acc,p)=>acc+Number(p),0);
+    const saldo = totalDevido - totalPago;
+
+    let html = `
+        <div class="section">
+            <h3>🧹 Controle de Limpeza</h3>
+
+            <p><strong>Limpezas realizadas no mês:</strong> ${totalLimpezas}</p>
+
+            <label>Valor por limpeza</label>
+            <input type="number" value="${valorLimpeza}" onchange="atualizarValor(this.value)">
+
+            <p><strong>Total devido:</strong> R$ ${totalDevido.toFixed(2)}</p>
+            <p><strong>Total pago:</strong> R$ ${totalPago.toFixed(2)}</p>
+            <p><strong>Saldo:</strong> R$ ${saldo.toFixed(2)}</p>
+
+            <label>Registrar pagamento</label>
+            <input type="number" id="novoPagamento" placeholder="Valor pago">
+
+            <button class="btn btn-green" onclick="registrarPagamento()">Registrar Pagamento</button>
+
+            <button class="btn btn-gray" onclick="fecharLimpeza()">Fechar</button>
+        </div>
+    `;
+
+    document.getElementById("limpezaSection").innerHTML = html;
+}
+
+function atualizarValor(valor){
+    valorLimpeza = Number(valor);
+    localStorage.setItem("valorLimpeza", valorLimpeza);
+    renderLimpeza();
+}
+
+function registrarPagamento(){
+    const valor = document.getElementById("novoPagamento").value;
+    if(!valor) return;
+
+    pagamentos.push(Number(valor));
+    localStorage.setItem("pagamentosLimpeza", JSON.stringify(pagamentos));
+    renderLimpeza();
+}
+
+function fecharLimpeza(){
+    document.getElementById("limpezaSection").style.display = "none";
+}
+
+function formatarData(data){
+    const d = new Date(data);
+    return d.toLocaleDateString("pt-BR");
+}
+
+</script>
+
+</body>
+</html>
