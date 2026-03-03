@@ -268,6 +268,13 @@ function excluir(id){
 }
 
 function formatarData(dataISO){
+    if(!dataISO) return "";
+
+    // Se vier como ISO completo (com T e Z)
+    if(dataISO.includes("T")){
+        dataISO = dataISO.split("T")[0];
+    }
+
     const partes = dataISO.split("-");
     return `${partes[2]}/${partes[1]}/${partes[0]}`;
 }
