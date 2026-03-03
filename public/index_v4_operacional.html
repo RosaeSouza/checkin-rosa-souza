@@ -46,15 +46,17 @@ input, select{
 }
 .remove-btn{
     position:absolute;
-    top:10px;
-    right:10px;
+    top:12px;
+    right:12px;
     background:#e74c3c;
     color:white;
     border:none;
-    border-radius:6px;
-    padding:5px 8px;
-    font-size:11px;
+    border-radius:20px;
+    padding:4px 10px;
+    font-size:10px;
+    font-weight:600;
     cursor:pointer;
+    width:auto;
 }
 button{
     width:100%;
@@ -180,7 +182,7 @@ function adicionarPessoa(){
 
     card.innerHTML=`
         <button type="button" class="remove-btn" onclick="this.parentElement.remove()">Excluir</button>
-        <h4>Hóspede</h4>
+        <h4 style="margin-right:60px;">Hóspede</h4>
 
         <label>Nome Completo</label>
         <input type="text" class="nome" required>
