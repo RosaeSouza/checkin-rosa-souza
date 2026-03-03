@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin Mobile V3 | Rosa & Souza</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
+
+<style>
+body{
+    font-family:'Poppins', sans-serif;
+    background:#f4f6f9;
+    margin:0;
+    padding:15px;
+}
+
+.container{
+    max-width:600px;
+    margin:auto;
+}
+
+h2{
+    text-align:center;
+    margin-bottom:15px;
+}
+
+.dashboard{
+    background:white;
+    padding:15px;
+    border-radius:12px;
+    margin-bottom:20px;
+    box-shadow:0 4px 10px rgba(0,0,0,0.05);
+}
+
+.dashboard p{
+    margin:6px 0;
+    font-size:14px;
+}
+
+.estudio-btn{
+    width:100%;
+    padding:18px;
+    margin-bottom:12px;
+    border:none;
+    border-radius:12px;
+    background:#2c5364;
+    color:white;
+    font-size:16px;
+    font-weight:600;
+    cursor:pointer;
+}
+
+.card{
+    background:white;
+    padding:16px;
+    border-radius:12px;
+    margin-bottom:12px;
+    box-shadow:0 4px 10px rgba(0,0,0,0.05);
+}
+
+.card p{
+    margin:6px 0;
+    font-size:14px;
+}
+
+.copy-btn{
+    background:#3498db;
+    color:white;
+    border:none;
+    border-radius:6px;
+    padding:4px 8px;
+    font-size:11px;
+    margin-left:6px;
+    cursor:pointer;
+}
+
+.action-btn{
+    width:100%;
+    padding:12px;
+    margin-top:8px;
+    border:none;
+    border-radius:10px;
+    font-weight:600;
+    cursor:pointer;
+}
+
+.ver-btn{ background:#1abc9c; color:white; }
+.del-btn{ background:#e74c3c; color:white; }
+
+.voltar-btn{
+    margin-bottom:15px;
+    background:#7f8c8d;
+    color:white;
+    padding:10px;
+    border:none;
+    border-radius:8px;
+    cursor:pointer;
+    width:100%;
+}
+
+.toggle-btn{
+    margin-top:15px;
+    background:#34495e;
+    color:white;
+    padding:10px;
+    border:none;
+    border-radius:8px;
+    cursor:pointer;
+    width:100%;
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<h2>Admin Mobile</h2>
+
+<div class="dashboard" id="dashboard"></div>
+
+<div id="telaEstudios"></div>
+<div id="telaReservas" style="display:none;"></div>
+
+</div>
+
+<script>
+
+let todosDados = [];
+
+fetch("/admin")
+.then(res=>res.json())
+.then(data=>{
+    todosDados = data;
+    renderDashboard();
+    renderEstudios();
+});
+
+function renderDashboard(){
+    const hoje = new Date();
+    hoje.setHours(0,0,0,0);
+
+    const seteDias = new Date();
+    seteDias.setDate(hoje.getDate() + 7);
+
+    const checkoutsHoje = todosDados.filter(r => {
+        const d = new Date(r.checkout);
+        d.setHours(0,0,0,0);
+        return d.getTime() === hoje.getTime();
+    });
+
+    const proximos = todosDados.filter(r => {
+        const d = new Date(r.checkout);
+        return d > hoje && d <= seteDias;
+    });
+
+    document.getElementById("dashboard").innerHTML = `
+        <p><strong>📅 Check-outs Hoje:</strong> ${checkoutsHoje.length}</p>
+        <p><strong>📅 Próximos 7 dias:</strong> ${proximos.length}</p>
+    `;
+}
+
+function renderEstudios(){
+    const tela = document.getElementById("telaEstudios");
+    tela.innerHTML = "";
+
+    if(todosDados.length === 0){
+        tela.innerHTML = "<p style='text-align:center;margin-top:40px;'>Nenhuma reserva cadastrada ainda.</p>";
+        return;
+    }
+
+    const estudios = [...new Set(todosDados.map(r => r.estudio))];
+
+    estudios.forEach(est=>{
+        const btn = document.createElement("button");
+        btn.className = "estudio-btn";
+        btn.innerText = est;
+        btn.onclick = ()=>abrirEstudio(est);
+        tela.appendChild(btn);
+    });
+}
+
+function abrirEstudio(estudio){
+    document.getElementById("telaEstudios").style.display = "none";
+    const tela = document.getElementById("telaReservas");
+    tela.style.display = "block";
+
+    const hoje = new Date();
+    const reservas = todosDados.filter(r => r.estudio === estudio);
+    const ativas = reservas.filter(r => new Date(r.checkout) >= hoje);
+    const encerradas = reservas.filter(r => new Date(r.checkout) < hoje);
+
+    tela.innerHTML = `
+        <button class="voltar-btn" onclick="voltar()">← Voltar</button>
+        <h3>${estudio}</h3>
+        <h4>Reservas Ativas</h4>
+        <div id="ativas"></div>
+        <button class="toggle-btn" onclick="mostrarEncerradas()">Mostrar Reservas Encerradas</button>
+        <div id="encerradas" style="display:none;"></div>
+    `;
+
+    renderCards(ativas, "ativas");
+    renderCards(encerradas, "encerradas");
+}
+
+function renderCards(lista, containerId){
+    const container = document.getElementById(containerId);
+    container.innerHTML = "";
+
+    lista.forEach(r=>{
+        const card = document.createElement("div");
+        card.className = "card";
+
+        const doc = r.hospedes[0];
+
+        card.innerHTML = `
+            <p>
+              <strong>Nome:</strong> ${doc.nome}
+              <button class="copy-btn" onclick="copiarTexto('${doc.nome}')">Copiar</button>
+            </p>
+
+            <p>
+              <strong>CPF:</strong> ${doc.cpf || "-"}
+              ${doc.cpf ? `<button class="copy-btn" onclick="copiarTexto('${doc.cpf}')">Copiar</button>` : ""}
+            </p>
+
+            <p>
+              <strong>Passaporte:</strong> ${doc.passaporte || "-"}
+              ${doc.passaporte ? `<button class="copy-btn" onclick="copiarTexto('${doc.passaporte}')">Copiar</button>` : ""}
+            </p>
+
+            <p><strong>Entrada:</strong> ${formatarData(r.checkin)}</p>
+            <p><strong>Saída:</strong> ${formatarData(r.checkout)}</p>
+
+            ${doc.documentoUrl 
+              ? `<a href="${doc.documentoUrl}" target="_blank">
+                   <button class="action-btn ver-btn">Ver Documento</button>
+                 </a>`
+              : `<p style="color:#888;">Documento não enviado</p>`}
+
+            <button class="action-btn del-btn" onclick="excluirReserva('${r._id}')">Excluir</button>
+        `;
+
+        container.appendChild(card);
+    });
+}
+
+function copiarTexto(texto){
+    navigator.clipboard.writeText(texto)
+    .then(()=>alert("Copiado com sucesso!"));
+}
+
+function mostrarEncerradas(){
+    const div = document.getElementById("encerradas");
+    div.style.display = div.style.display === "none" ? "block" : "none";
+}
+
+function voltar(){
+    document.getElementById("telaReservas").style.display = "none";
+    document.getElementById("telaEstudios").style.display = "block";
+}
+
+function formatarData(data){
+    const d = new Date(data);
+    return d.toLocaleDateString("pt-BR");
+}
+
+function excluirReserva(id){
+    if(!confirm("Tem certeza que deseja excluir?")) return;
+
+    fetch("/checkin/" + id, { method: "DELETE" })
+    .then(res => res.json())
+    .then(() => {
+        alert("Reserva excluída com sucesso!");
+        location.reload();
+    });
+}
+
+</script>
+
+</body>
+</html>
