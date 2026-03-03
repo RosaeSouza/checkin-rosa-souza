@@ -267,8 +267,9 @@ function excluir(id){
     .then(()=>location.reload());
 }
 
-function formatarData(d){
-    return new Date(d).toLocaleDateString("pt-BR");
+function formatarData(dataISO){
+    const partes = dataISO.split("-");
+    return `${partes[2]}/${partes[1]}/${partes[0]}`;
 }
 
 </script>
