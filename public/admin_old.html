@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Painel Administrativo</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+
+<style>
+body{
+  font-family:Poppins, sans-serif;
+  background:#f4f6f9;
+  padding:20px;
+}
+h1{text-align:center;margin-bottom:10px;}
+.section-title{
+  margin-top:40px;
+  font-weight:600;
+  font-size:18px;
+}
+table{
+  width:100%;
+  border-collapse:collapse;
+  background:white;
+  box-shadow:0 5px 15px rgba(0,0,0,0.1);
+  margin-top:10px;
+}
+th, td{
+  padding:10px;
+  border-bottom:1px solid #ddd;
+  text-align:center;
+  font-size:13px;
+}
+th{
+  background:#2c5364;
+  color:white;
+}
+.btn{
+  padding:6px 10px;
+  border:none;
+  border-radius:6px;
+  cursor:pointer;
+  font-size:12px;
+}
+.ver-btn{
+  background:#1abc9c;
+  color:white;
+}
+.delete-btn{
+  background:#e74c3c;
+  color:white;
+}
+.logout{
+  float:right;
+  background:#555;
+  color:white;
+  padding:6px 10px;
+  border:none;
+  border-radius:6px;
+  cursor:pointer;
+}
+</style>
+</head>
+
+<body>
+
+<script>
+/* 🔐 PROTEÇÃO LOGIN */
+if(localStorage.getItem("adminAutenticado") !== "true"){
+  window.location.href = "/login.html";
+}
+</script>
+
+<h1>
+ROSA & SOUZA ADMINISTRADORA DE BENS
+<button class="logout" onclick="logout()">Sair</button>
+</h1>
+
+<div class="section-title">🟢 Reservas Ativas</div>
+<table>
+<thead>
+<tr>
+<th>Estúdio</th>
+<th>Check-in</th>
+<th>Check-out</th>
+<th>Hóspede</th>
+<th>CPF / Passaporte</th>
+<th>Documento</th>
+<th>Ação</th>
+</tr>
+</thead>
+<tbody id="ativas"></tbody>
+</table>
+
+<div class="section-title">⚪ Reservas Encerradas</div>
+<table>
+<thead>
+<tr>
+<th>Estúdio</th>
+<th>Check-in</th>
+<th>Check-out</th>
+<th>Hóspede</th>
+<th>CPF / Passaporte</th>
+<th>Documento</th>
+<th>Ação</th>
+</tr>
+</thead>
+<tbody id="encerradas"></tbody>
+</table>
+
+<script>
+
+function logout(){
+  localStorage.removeItem("adminAutenticado");
+  window.location.href = "/login.html";
+}
+
+function formatarData(data){
+  return new Date(data).toLocaleDateString();
+}
+
+function hoje(){
+  const d = new Date();
+  d.setHours(0,0,0,0);
+  return d;
+}
+
+function excluirCheckin(id){
+  if(!confirm("Tem certeza que deseja excluir esta reserva definitivamente?")){
+    return;
+  }
+
+  fetch("/checkin/" + id, { method: "DELETE" })
+  .then(res => res.json())
+  .then(() => {
+    alert("Reserva excluída com sucesso!");
+    location.reload();
+  })
+  .catch(err => {
+    alert("Erro ao excluir.");
+    console.error(err);
+  });
+}
+
+fetch("/admin")
+.then(res=>res.json())
+.then(data=>{
+
+  const ativas = document.getElementById("ativas");
+  const encerradas = document.getElementById("encerradas");
+
+  data.forEach(checkin=>{
+
+    const checkoutDate = new Date(checkin.checkout);
+    checkoutDate.setHours(0,0,0,0);
+
+    const destino = checkoutDate >= hoje() ? ativas : encerradas;
+
+    checkin.hospedes.forEach(hospede=>{
+
+      const documentoIdentificacao =
+        hospede.cpf
+          ? hospede.cpf
+          : hospede.passaporte
+            ? hospede.passaporte + (hospede.pais ? " (" + hospede.pais + ")" : "")
+            : "Não informado";
+
+      const tr = document.createElement("tr");
+
+      tr.innerHTML = `
+        <td>${checkin.estudio}</td>
+        <td>${formatarData(checkin.checkin)}</td>
+        <td>${formatarData(checkin.checkout)}</td>
+        <td>${hospede.nome}</td>
+        <td>${documentoIdentificacao}</td>
+        <td>
+          ${hospede.documentoUrl
+            ? `<a href="${hospede.documentoUrl}" target="_blank">
+                 <button class="btn ver-btn">Abrir</button>
+               </a>`
+            : "Não enviado"}
+        </td>
+        <td>
+          <button class="btn delete-btn" onclick="excluirCheckin('${checkin._id}')">
+            Excluir
+          </button>
+        </td>
+      `;
+
+      destino.appendChild(tr);
+    });
+  });
+});
+
+</script>
+
+</body>
+</html>
