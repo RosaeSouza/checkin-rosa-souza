@@ -128,28 +128,16 @@ app.get("/admin", async (req, res) => {
 
 app.delete("/checkin/:id", async (req, res) => {
   try {
-    const checkin = await Checkin.findById(req.params.id);
 
-    if (!checkin) {
-      return res.status(404).json({ erro: "Reserva não encontrada" });
-    }
+    const id = req.params.id;
 
-    for (const hospede of checkin.hospedes) {
-      if (hospede.documentoPublicId) {
-        await cloudinary.uploader.destroy(
-          hospede.documentoPublicId,
-          { resource_type: "auto" }
-        );
-      }
-    }
-
-    await Checkin.findByIdAndDelete(req.params.id);
+    await Checkin.deleteOne({ _id: id });
 
     res.json({ status: "Excluído com sucesso" });
 
   } catch (error) {
     console.error("Erro ao excluir:", error);
-    res.status(500).json({ erro: "Erro interno ao excluir" });
+    res.status(500).json({ erro: "Erro ao excluir" });
   }
 });
 
