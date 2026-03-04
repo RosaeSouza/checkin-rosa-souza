@@ -98,11 +98,11 @@ app.post("/checkin", upload.any(), async (req, res) => {
     }
 
     const novo = new Checkin({
-      estudio: req.body.estudio,
-      checkin: req.body.checkin,
-      checkout: req.body.checkout,
-      hospedes
-    });
+  estudio: req.body.estudio,
+  checkin: new Date(req.body.checkin + "T12:00:00"),
+  checkout: new Date(req.body.checkout + "T12:00:00"),
+  hospedes
+});
 
     await novo.save();
     res.json({ status: "salvo com sucesso" });

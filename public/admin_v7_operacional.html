@@ -115,23 +115,20 @@ fetch("/admin")
 
 function renderDashboard(){
 
-    const hojeStr = new Date().toISOString().split("T")[0];
+    const hojeStr = new Date().toLocaleDateString("en-CA"); 
+    // formato YYYY-MM-DD no horário local do Brasil
 
     const seteDias = new Date();
     seteDias.setDate(seteDias.getDate()+7);
 
+    let html="<h3>📅 Check-outs Hoje</h3>";
+
     const hojeLista = todosDados.filter(r=>{
         if(!r.checkout) return false;
-        const dataCheckout = r.checkout.split("T")[0];
+
+        const dataCheckout = r.checkout.substring(0,10); // pega YYYY-MM-DD puro
         return dataCheckout === hojeStr;
     });
-
-    const proximos = todosDados.filter(r=>{
-        const d=new Date(r.checkout);
-        return d>new Date() && d<=seteDias;
-    }).sort((a,b)=>new Date(a.checkout)-new Date(b.checkout));
-
-    let html="<h3>📅 Check-outs Hoje</h3>";
 
     if(hojeLista.length===0){
         html+="<p>Nenhum hoje.</p>";
@@ -142,6 +139,13 @@ function renderDashboard(){
     }
 
     html+="<h3 style='margin-top:15px;'>📅 Próximos 7 dias</h3>";
+
+    const proximos = todosDados.filter(r=>{
+        if(!r.checkout) return false;
+
+        const dataCheckout = new Date(r.checkout.substring(0,10));
+        return dataCheckout > new Date(hojeStr) && dataCheckout <= seteDias;
+    }).sort((a,b)=> new Date(a.checkout) - new Date(b.checkout));
 
     if(proximos.length===0){
         html+="<p>Nenhum nos próximos 7 dias.</p>";
