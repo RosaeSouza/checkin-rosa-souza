@@ -81,7 +81,7 @@ app.post("/admin-login", (req, res) => {
 });
 
 /* ===============================
-   CHECK-IN DO HÓSPEDE
+   ROTAS
 ================================= */
 
 app.post("/checkin", upload.any(), async (req, res) => {
@@ -98,112 +98,32 @@ app.post("/checkin", upload.any(), async (req, res) => {
     }
 
     const novo = new Checkin({
-      estudio: req.body.estudio,
-      checkin: new Date(req.body.checkin + "T12:00:00"),
-      checkout: new Date(req.body.checkout + "T12:00:00"),
-      hospedes
-    });
+  estudio: req.body.estudio,
+  checkin: new Date(req.body.checkin + "T12:00:00"),
+  checkout: new Date(req.body.checkout + "T12:00:00"),
+  hospedes
+});
 
     await novo.save();
-
     res.json({ status: "salvo com sucesso" });
 
   } catch (err) {
-
     console.error(err);
     res.status(500).json({ erro: err.message });
-
   }
 });
-
-/* ===============================
-   LISTAR RESERVAS ADMIN
-================================= */
 
 app.get("/admin", async (req, res) => {
   try {
-
     const dados = await Checkin.find().sort({ checkout: 1 });
-
     res.json(dados);
-
   } catch (err) {
-
     res.status(500).json({ erro: err.message });
-
   }
 });
 
 /* ===============================
-   EDITAR RESERVA (NOVO)
-================================= */
-
-app.put("/checkin/:id", async (req, res) => {
-
-  try {
-
-    const { checkin, checkout } = req.body;
-
-    await Checkin.updateOne(
-      { _id: req.params.id },
-      {
-        checkin: new Date(checkin + "T12:00:00"),
-        checkout: new Date(checkout + "T12:00:00")
-      }
-    );
-
-    res.json({ status: "Reserva atualizada" });
-
-  } catch (err) {
-
-    res.status(500).json({ erro: err.message });
-
-  }
-
-});
-
-/* ===============================
-   CRIAR RESERVA MANUAL (NOVO)
-================================= */
-
-app.post("/admin/reserva", async (req, res) => {
-
-  try {
-
-    const { estudio, checkin, checkout, nome, cpf, passaporte, celular, endereco } = req.body;
-
-    const novaReserva = new Checkin({
-
-      estudio,
-
-      checkin: new Date(checkin + "T12:00:00"),
-
-      checkout: new Date(checkout + "T12:00:00"),
-
-      hospedes: [{
-        nome,
-        cpf,
-        passaporte,
-        celular,
-        endereco
-      }]
-
-    });
-
-    await novaReserva.save();
-
-    res.json({ status: "Reserva criada" });
-
-  } catch (err) {
-
-    res.status(500).json({ erro: err.message });
-
-  }
-
-});
-
-/* ===============================
-   DELETE CHECKIN
+   DELETE CHECKIN (CORRIGIDO)
 ================================= */
 
 app.delete("/checkin/:id", async (req, res) => {
@@ -216,10 +136,8 @@ app.delete("/checkin/:id", async (req, res) => {
     res.json({ status: "Excluído com sucesso" });
 
   } catch (error) {
-
     console.error("Erro ao excluir:", error);
     res.status(500).json({ erro: "Erro ao excluir" });
-
   }
 });
 
